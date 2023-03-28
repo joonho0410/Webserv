@@ -1,0 +1,45 @@
+    server {
+        listen       4242;
+        server_name  localhost;
+
+        #charset koi8-r;
+
+        #access_log  logs/host.access.log  main;
+
+        location / {
+            root   ./;
+            client_max_body_size 1000;
+            index  test2.html;
+        }
+        location /test {
+            root ./test/;
+            index test3.html;
+            location /*.sh {
+                cgi_pass ./cgi-bin/;
+            }
+        }
+
+        location /cgi-bin {
+            root ./;
+        }
+    }
+
+    server {
+        listen       80;
+        server_name  nginx1.appsroot.com;
+
+        location / {
+            root   /home/nginx1;
+            index  index.html index.htm;
+        }
+    }
+
+    server {
+        listen       80;
+        server_name  nginx2.appsroot.com;
+
+        location / {
+            root   /home/nginx2;
+            index  index.html index.htm;
+        }
+    }
