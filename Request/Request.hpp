@@ -5,6 +5,23 @@
 
 #include "../Structure.hpp"
 
+enum Request_state
+{
+    READ_START_LINE,
+    READ_KEY,
+    READ_HEADER,
+    READ_BODY,
+    REQUEST_ERROR,
+    REQUEST_FINISH
+};
+
+enum Requset_error
+{
+    OK,
+    OVER_LENGTH,
+    WRONG_PARSING,
+};
+
 class Request
 {
     public:
@@ -32,7 +49,8 @@ class Request
         std::map< std::string, std::vector<std::string> > getHeader();
 
     private:
-        /* initialize with false */
+        /* initialize need */
+        size_t  _m_bodyMaxSize;
         int     _m_state;
         int     _m_errorCode;
 
@@ -48,9 +66,9 @@ class Request
 
         std::string _m_buf; // 잔여 버프들을 저장해놓는다.
         
-        void _M_parseStartLine();
-        void _M_parseRequestheader(std::string const &_line);
-        void _M_parseBody(std::string const &_line);
+        void _M_parseStartLine(size_t n);
+        void _M_parseRequestheader();
+        void _M_parseBody();
         void _M_parseKeyValue(std::string const &_line);
 
         void _M_parseValueWithComma(std::string const &_line, std::string key);

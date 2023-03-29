@@ -36,11 +36,21 @@ void ServerEngine::waitConnect(struct kevent &curr_event){
 void ServerEngine::readRequest(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     Request &req = udata->getRequest();
+    int state;
 
     _M_read_request(curr_event, req);
-    //_M_check_request_end();
-    //_M_check_header();
-    //_M_check_
+    state = req.getState();
+    switch (state)
+    {
+        case REQUEST_ERROR:
+            break;
+        case REQUEST_FINISH:
+            break;
+        default:
+            /* 아직 parsing이 완료되지않았으므로 계속해서 파싱을 받아 온다. 타임아웃이 필요하다 */
+            _M_change_events(_m_change_list, curr_event.ident, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, udata);
+            break;
+    }
 }
 void ServerEngine::readUrl(){
 

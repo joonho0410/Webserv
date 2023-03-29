@@ -29,8 +29,7 @@ enum Request_state
 {
     READ_START_LINE,
     READ_KEY,
-    READ_VALUE,
-    READ_BODY,
+    READ_HEADER,
     REQUEST_ERROR,
     REQUEST_FINISH
 };

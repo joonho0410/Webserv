@@ -144,8 +144,8 @@ void ServerEngine::_M_check_request(Request& req)
 {
     std::string page;
     size_t client_body_size = -1;
-    std::string url = req.get_url();
-    std::string host = *(req.get_header().find("Host")->second.begin());
+    std::string url = req.getUrl();
+    std::string host = *(req.getHeader().find("Host")->second.begin());
     struct server_config_struct serv_temp;
     struct server_config_struct loca_temp;
 
@@ -270,8 +270,8 @@ void ServerEngine::start_kqueue()
             /* Read Event */
             else if (curr_event->filter == EVFILT_READ)
             {
-                /* if server socket then make client socket */
-                switch(((KqueueUdata*)(curr_event->udata))->getState())
+                KqueueUdata *kdata = reinterpret_cast<KqueueUdata *>(curr_event->udata);
+                switch(kdata->getState())
                 {
                     case WAIT_CONNECT:
                         waitConnect(*curr_event);
@@ -280,14 +280,12 @@ void ServerEngine::start_kqueue()
                         readRequest(*curr_event);
                         break;
                     case READ_DOCS:
-
                         break;
                     case READ_CGI_RESULT:
                         break;
                     default:
                         std::cout << "undefined state at read event " << std::endl;
                 }
-
                 /* if client socket read contents */
                 if (_m_clients.find(curr_event->ident)!= _m_clients.end())
                 {
@@ -301,8 +299,8 @@ void ServerEngine::start_kqueue()
                         /* if required pages */
                         std::string page;
                         size_t client_body_size = -1;
-                        std::string url = req.get_url();
-                        std::string host = *(req.get_header().find("Host")->second.begin());
+                        std::string url = req.getUrl();
+                        std::string host = *(req.getHeader().find("Host")->second.begin());
                         struct server_config_struct serv_temp;
                         struct server_config_struct loca_temp;
                         std::string server_name = host.substr(0, host.find_first_of(":", 0));
