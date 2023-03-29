@@ -19,7 +19,7 @@ enum kqueue_process
 {
     WAIT_CONNECT,
     READ_REQUEST,
-    READ_URL,
+    READ_DOCS,
     READ_CGI_RESULT,
     WRITE_RESPONSE,
     EXCUTE_CGI,
@@ -27,9 +27,18 @@ enum kqueue_process
 
 enum Request_state
 {
-    READ_REQUEST_LINE,
+    READ_START_LINE,
     READ_KEY,
-    READ_VALUE
+    READ_VALUE,
+    READ_BODY,
+    REQUEST_ERROR,
+    REQUEST_FINISH
+};
+
+enum Requset_error
+{
+    OVER_LENGTH,
+    WRONG_PARSING,
 };
 
 class kqueue_udata

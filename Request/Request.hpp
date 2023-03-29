@@ -8,52 +8,51 @@
 class Request
 {
     public:
-        Request(){}
-        Request(std::string buf);
+        Request();
         ~Request(){}
 
-        void parse_and_check_valid();
         void show_save();
         void check_body_size(size_t _size);
+        
+        void appendBuf(std::string &);
+        void parseBuf();
 
         /* setter */
-        void set_buf(std::string buf);
+        void setBuf(std::string buf);
         void setCheckHeader(bool);
         void setCheckBody(bool);
+        void setState(int);
 
         /* getter */
-        bool getCheckHeader();
-        bool getCheckBody();
-        std::string get_body();
-        std::string get_url();
-        std::string get_method();
-        std::string get_buf();
-        std::map< std::string, std::vector<std::string> > get_header();
+        int getState();
+        std::string getBody();
+        std::string getUrl();
+        std::string getMethod();
+        std::string getBuf();
+        std::map< std::string, std::vector<std::string> > getHeader();
 
     private:
         /* initialize with false */
-        bool    _check_header;
-        bool    _check_body;
-        int     _state;
+        int     _m_state;
+        int     _m_errorCode;
 
         /* initialize with empty */
-        std::map< std::string, std::vector<std::string> > _header;
-        std::string _request_line;
-        std::string _body;
+        std::map< std::string, std::vector<std::string> > _m_header;
+        std::string _m_startLine;
+        std::string _m_body;
 
-        std::string _method;
-        std::string _url;
-        std::string _http_version;
-        std::string _query_string;
+        std::string _m_method;
+        std::string _m_url;
+        std::string _m_httpVersion;
+        std::string _m_queryString;
 
-        std::string _buf; // 잔여 버프들을 저장해놓는다.
+        std::string _m_buf; // 잔여 버프들을 저장해놓는다.
         
-        void _M_parse_buf();
-        void _M_parse_requestline(std::string const &_line);
-        void _M_parse_requestheader(std::string const &_line);
-        void _M_parse_body(std::string const &_line);
-        void _M_parse_key_value_line(std::string const &_line);
+        void _M_parseStartLine();
+        void _M_parseRequestheader(std::string const &_line);
+        void _M_parseBody(std::string const &_line);
+        void _M_parseKeyValue(std::string const &_line);
 
-        void _M_parse_value_with_comma(std::string const &_line, std::string key);
-        void _M_parse_value_with_slash(std::string const &_line, std::string key);
+        void _M_parseValueWithComma(std::string const &_line, std::string key);
+        void _M_parseValueWithSlash(std::string const &_line, std::string key);
 };

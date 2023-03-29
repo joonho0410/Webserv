@@ -121,30 +121,22 @@ void ServerEngine::_M_read_request(struct kevent& _curr_event, Request& req)
 
     char buf[1024];
 
-    int n = read(_curr_event.ident, buf, sizeof(buf) - 1);
-    if (n <= 0) {
-        if (n < 0)
-            std::cerr << "client read error!" << std::endl;
-        std::cerr << "read out\n";
-        _M_disconnect_client(_curr_event.ident, _m_clients);
-    }
-    else {
-        size_t len = 0;
-        std::string temp;
-        std::string temp_buf;
-        
-        buf[n] = '\0';
-        temp_buf = std::string(buf);
-        if (req.getCheckHeader() == false){
-            if (temp_buf.find("\r\n\r\n") != std::string::npos)
-                req.setCheckHeader(true);
+    while (1) {
+        int n = read(_curr_event.ident, buf, sizeof(buf) - 1);
+        if (n <= 0) {
+            if (n < 0)
+                std::cerr << "client read error!" << std::endl;
+            std::cerr << "read out\n";
+            _M_disconnect_client(_curr_event.ident, _m_clients);
+            break ;
         }
-        else{//header 가 모두 들어오고 content-length 가 존재하거나 chunked data 가 존재할 때
-
+        else {            
+            buf[n] = '\0';
+            std::string temp = std::string(buf);
+            req.appendBuf(temp);
+            req.parseBuf();
+            memset(buf, 0, sizeof(buf)); 
         }
-        temp += std::string(buf);
-        req.set_buf(std::string(temp));
-        std::cout << temp << std::endl;
     }
 }
 
@@ -235,9 +227,6 @@ void ServerEngine::make_serversocket()
 
 void ServerEngine::start_kqueue()
 {
-    Request req;
-    // Response res;
-
     if ((_m_kq = kqueue()) ==  -1)
          exit_with_perror("kqueue() error\n" + std::string(strerror(errno)));
 
@@ -290,7 +279,8 @@ void ServerEngine::start_kqueue()
                     case READ_REQUEST:
                         readRequest(*curr_event);
                         break;
-                    case READ_URL:
+                    case READ_DOCS:
+
                         break;
                     case READ_CGI_RESULT:
                         break;

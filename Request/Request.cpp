@@ -1,57 +1,67 @@
 #include "Request.hpp"
 
-Request::Request(std::string buf)
+Request::Request()
 {
-    _buf = buf;
-    _check_header = false;
-    _check_body = false;
-    _state = READ_REQUEST_LINE;
-}
-
-void Request::parse_and_check_valid()
-{
-    _M_parse_buf();
+    _m_buf.clear();
+    _m_state = READ_START_LINE;
 }
 
 void Request::check_body_size(size_t _size)
 {
-    std::cout << "body line " << _body << std::endl;
-    std::cout << "body size : " << _body.size() << std::endl;
-    if (_body.size() > _size)
+    std::cout << "body line " << _m_body << std::endl;
+    std::cout << "body size : " << _m_body.size() << std::endl;
+    if (_m_body.size() > _size)
     {
         std::cout << "body size error " << std::endl;
         exit(1);
     }
 }
 
-void Request::_M_parse_buf()
+void Request::appendBuf(std::string &buf)
 {
-    size_t      lineStart = 0;
-    size_t      lineEnd = 0;
+    try {
+        _m_buf.append(buf);
+    }
+    catch (std::length_error &e)
+    {
+        _m_state = REQUEST_ERROR;   
+        _m_errorCode = OVER_LENGTH;
+    }
+}
+
+void Request::parseBuf()
+{
+    size_t  findCRLF;
 
     /* parsing request line */
     std::cout << "====== buf =========" << std::endl;
-    std::cout << _buf << std::endl;
+    std::cout << _m_buf << std::endl;
     while (1)
     {
-        lineEnd = _buf.find_first_of("\n", lineEnd);
-        std::cout << lineEnd << std::endl;
-        if (lineEnd == std::string::npos)
+        if (_m_state == REQUEST_FINISH)
             break;
-        // if (lineEnd != 0)
-        //     break;
-        if (_buf[lineEnd - 1] == '\r')
+        findCRLF = _m_buf.find("\r\n");
+        if (findCRLF == std::string::npos && _m_state != READ_BODY)
             break;
-        lineEnd += 1;
+        switch (_m_state)
+        {
+            case READ_START_LINE:
+                _M_parseStartLine();
+                break;
+            case READ_KEY:
+                break;
+            case READ_VALUE:
+
+                break;
+            case READ_BODY:
+                break;
+            case REQUEST_ERROR:
+                break;     
+        }
     }
-    _M_parse_requestline(_buf.substr(lineStart, lineEnd - lineStart - 1));
-    lineStart = lineEnd +1;
-    /* parsing request headers */
-    /* + parsing body */
-    _M_parse_requestheader(_buf.substr(lineStart));
 }
 
-void Request::_M_parse_requestline(std::string const &_line)
+void Request::_M_parseStartLine()
 {
     size_t  keyStart = 0;
     size_t  keyEnd = 0;
@@ -59,25 +69,27 @@ void Request::_M_parse_requestline(std::string const &_line)
     std::string key;
     std::string temp;
 
-    keyStart = _line.find_first_not_of(" \t", keyEnd);
-    keyEnd = _line.find_first_of(" \t", keyStart);
-    key = _line.substr(keyStart, keyEnd - keyStart);
+    keyStart = _m_buf.find_first_not_of(" \t", keyEnd);
+    keyEnd = _m_buf.find_first_of(" \t", keyStart);
+    key = _m_buf.substr(keyStart, keyEnd - keyStart);
     if (!((key.compare("GET") == 0) || (key.compare("POST") == 0) || (key.compare("DELETE") == 0 )))
     {
         std::cout << "invalid http method " << std::endl;
-        exit(1);
+        _m_state = REQUEST_ERROR;   
+        _m_errorCode = WRONG_PARSING;
+        return ;
     }
-    _method = key;
+    _m_method = key;
     std::cout << "key : " << key << std::endl;
-    keyStart = _line.find_first_not_of(" \t", keyEnd);
-    keyEnd = _line.find_first_of(" \t", keyStart);
-    key = _line.substr(keyStart, keyEnd - keyStart);
+    keyStart = _m_buf.find_first_not_of(" \t", keyEnd);
+    keyEnd = _m_buf.find_first_of(" \t", keyStart);
+    key = _m_buf.substr(keyStart, keyEnd - keyStart);
 
-    _url = key;
+    _m_url = key;
     std::cout << "url : " << key << std::endl;
-    keyStart = _line.find_first_not_of(" \t", keyEnd);
-    keyEnd = _line.find_first_of(" \t", keyStart);
-    key = _line.substr(keyStart, keyEnd - keyStart);
+    keyStart = _m_buf.find_first_not_of(" \t", keyEnd);
+    keyEnd = _m_buf.find_first_of(" \t", keyStart);
+    key = _m_buf.substr(keyStart, keyEnd - keyStart);
     
     keyStart = key.find_first_of("/", 0);
     temp = key.substr(0, keyStart);
@@ -85,25 +97,31 @@ void Request::_M_parse_requestline(std::string const &_line)
     if (temp.compare("HTTP") != 0)
     {
         std::cout << "is not http" << std::endl;
-        exit(1);
+        _m_state = REQUEST_ERROR;   
+        _m_errorCode = WRONG_PARSING;
+        return ;
     }
     temp = key.substr(keyStart + 1);
     std::cout << "version : " << temp << std::endl;
     if (!(temp.compare("1.1") == 0 || temp.compare("1.0") == 0))
     {
         std::cout << "http version error " << std::endl;
-        exit(1);
+        _m_state = REQUEST_ERROR;   
+        _m_errorCode = WRONG_PARSING;
+        return ;
     }
+    _m_state = READ_KEY;
+    return ;
 }
 
 void Request::show_save()
 {
     std::cout << "========= show save ===========" <<std::endl;
-    std::map< std::string, std::vector<std::string> >::iterator begin = _header.begin();
-    std::map< std::string, std::vector<std::string> >::iterator end = _header.end();
-    std::cout << "method : " << _method << std::endl;
-    std::cout << "_m_url : " << _url << std::endl;
-    std::cout << "_m_body : " << _body << std::endl;
+    std::map< std::string, std::vector<std::string> >::iterator begin = _m_header.begin();
+    std::map< std::string, std::vector<std::string> >::iterator end = _m_header.end();
+    std::cout << "method : " << _m_method << std::endl;
+    std::cout << "_m_url : " << _m_url << std::endl;
+    std::cout << "_m_body : " << _m_body << std::endl;
     for(; begin != end; ++ begin)
     {
         std::cout << "key : " << begin->first << std::endl;
@@ -115,7 +133,7 @@ void Request::show_save()
     }
 }
 
-void Request::_M_parse_value_with_comma(std::string const &_line, std::string _key)
+void Request::_M_parseValueWithComma(std::string const &_line, std::string _key)
 {
     size_t      valueStart = 0;
     size_t      valueEnd = 0;
@@ -133,7 +151,7 @@ void Request::_M_parse_value_with_comma(std::string const &_line, std::string _k
             value = _line.substr(valueStart);
         else
             value = _line.substr(valueStart, valueEnd - valueStart);
-        _header[_key].push_back(value);
+        _m_header[_key].push_back(value);
         // std::cout <<  value;
         if (valueEnd == std::string::npos)
             break;
@@ -142,18 +160,18 @@ void Request::_M_parse_value_with_comma(std::string const &_line, std::string _k
     // std::cout << std::endl;
 }
 
-void Request::_M_parse_value_with_slash(std::string const &_line, std::string _key)
+void Request::_M_parseValueWithSlash(std::string const &_line, std::string _key)
 {
 
 }
 
-void Request::_M_parse_body(std::string const &_line)
+void Request::_M_parseBody(std::string const &_line)
 {
     std::cout << "body line : " << _line << std::endl;
-    _body = _line;
+    _m_body = _line;
 }
 
-void Request::_M_parse_key_value_line(std::string const &_line)
+void Request::_M_parseKeyValue(std::string const &_line)
 {
     //std::cout << "key value : " << _line << std::endl;
     size_t      keyStart = 0;
@@ -164,10 +182,10 @@ void Request::_M_parse_key_value_line(std::string const &_line)
     keyStart = _line.find_first_not_of(" \t", keyStart);
     keyEnd = _line.find_first_of(":", keyStart);
     key = _line.substr(keyStart, keyEnd - keyStart);
-    _M_parse_value_with_comma(_line.substr(keyEnd + 1), key);
+    _M_parseValueWithComma(_line.substr(keyEnd + 1), key);
 }
 
-void Request::_M_parse_requestheader(std::string const &_line)
+void Request::_M_parseRequestheader(std::string const &_line)
 {
     std::cout << "========= header ========= \n" << _line << std::endl;
     size_t      lineStart = 0;
@@ -191,24 +209,21 @@ void Request::_M_parse_requestheader(std::string const &_line)
             {
                 // std::cout << "empty line " << std::endl;
                 lineStart = lineEnd + 1;
-                _M_parse_body(_line.substr(lineStart));
+                _M_parseBody(_line.substr(lineStart));
                 break ;
             }
-            _M_parse_key_value_line(_line.substr(lineStart, lineEnd - lineStart));
+            _M_parseKeyValue(_line.substr(lineStart, lineEnd - lineStart));
             lineStart = lineEnd + 1;
         }
     }
 }
 
 /* getter & setter */
-void Request::set_buf(std::string buf){ _buf = buf; }
-void Request::setCheckHeader(bool b) { _check_header = b; }
-void Request::setCheckBody(bool b) { _check_body = b; }
-
-bool Request::getCheckHeader() { return _check_header; }
-bool Request::getCheckBody() { return _check_body; }
-std::string Request::get_buf(){ return _buf; }
-std::string Request::get_body(){ return _body; }
-std::string Request::get_url(){ return _url; }
-std::string Request::get_method(){ return _method;}
-std::map< std::string, std::vector<std::string> > Request::get_header(){ return _header; }
+void Request::setState(int state){ _m_state = state; }
+void Request::setBuf(std::string buf){ _m_buf = buf; }
+int Request::getState(){ return _m_state; }
+std::string Request::getBuf(){ return _m_buf; }
+std::string Request::getBody(){ return _m_body; }
+std::string Request::getUrl(){ return _m_url; }
+std::string Request::getMethod(){ return _m_method;}
+std::map< std::string, std::vector<std::string> > Request::get_header(){ return _m_header; }
