@@ -1,5 +1,4 @@
 #include "KqueueUdata.hpp"
-#include "Structure.hpp"
 
 KqueueUdata::KqueueUdata()
 {

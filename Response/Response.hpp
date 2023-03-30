@@ -3,5 +3,11 @@
 class Response
 {
     private :
-        std::string _response;
+        int _m_errorCode;
+        std::string _m_response;
+
+    public :
+        void setErrorCode(int);
+
+        int& getErrorCode();
 };

@@ -25,21 +25,6 @@ enum kqueue_process
     EXCUTE_CGI,
 };
 
-enum Request_state
-{
-    READ_START_LINE,
-    READ_KEY,
-    READ_HEADER,
-    REQUEST_ERROR,
-    REQUEST_FINISH
-};
-
-enum Requset_error
-{
-    OVER_LENGTH,
-    WRONG_PARSING,
-};
-
 class kqueue_udata
 {
 

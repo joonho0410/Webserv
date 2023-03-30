@@ -18,13 +18,8 @@
 #include "../Structure.hpp"
 #include "../Request/Request.hpp"
 #include "../KqueueUdata.hpp"
+#include "../ParsingUtility.hpp"
 
-
-void exit_with_perror(const std::string& msg)
-{
-    std::cerr << msg << std::endl;
-    exit(EXIT_FAILURE);
-}
 
 class ServerEngine
 {
@@ -42,7 +37,7 @@ class ServerEngine
         void _M_disconnect_client(int client_fd, std::map<int, std::string>& clients);
         struct server_config_struct _M_find_server_and_port(std::string ports, std::string server_name);
         struct server_config_struct _M_find_location_block(struct server_config_struct &_server_block, std::string &url);
-        KqueueUdata* _M_make_udata(int state = 0);
+        KqueueUdata* _M_make_udata(int state);
 
         int _M_solve_request();
         int _M_serve_response();

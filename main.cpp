@@ -5,8 +5,9 @@
 #include <vector>
 #include <string>
 
-#include "ServerConfig/ServerConfig.hpp"
-#include "ServerEngine/ServerEngine.hpp"
+#include "./ServerConfig/ServerConfig.hpp"
+#include "./ServerEngine/ServerEngine.hpp"
+
 int main(int argc, char** argv)
 {
     ServerEngine server_engine;

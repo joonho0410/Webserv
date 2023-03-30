@@ -17,8 +17,12 @@ NAME = webserv
 SRCS = ./main.cpp \
 	./ServerConfig/ServerConfig.cpp \
 	./ServerEngine/ServerEngine.cpp \
+	./ServerEngine/ServerEngineProcess.cpp\
 	./Request/Request.cpp \
-	./Response/Response.cpp
+	./Response/Response.cpp \
+	./KqueueUdata.cpp \
+	./ParsingUtility.cpp \
+
 
 OBJS = $(SRCS:.cpp=.o)
 INCLUDE = .

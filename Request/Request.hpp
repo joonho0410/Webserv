@@ -2,15 +2,14 @@
 #include <iostream>
 #include <vector>
 #include <map>
-
-#include "../Structure.hpp"
+#include "../ParsingUtility.hpp"
 
 enum Request_state
 {
     READ_START_LINE,
-    READ_KEY,
     READ_HEADER,
     READ_BODY,
+    READ_BODY_CHUNKED,
     REQUEST_ERROR,
     REQUEST_FINISH
 };
@@ -20,6 +19,7 @@ enum Requset_error
     OK,
     OVER_LENGTH,
     WRONG_PARSING,
+    WRONG_BODY
 };
 
 class Request
@@ -29,7 +29,6 @@ class Request
         ~Request(){}
 
         void show_save();
-        void check_body_size(size_t _size);
         
         void appendBuf(std::string &);
         void parseBuf();
@@ -39,8 +38,10 @@ class Request
         void setCheckHeader(bool);
         void setCheckBody(bool);
         void setState(int);
+        void setErrorCode(int);
 
         /* getter */
+        int getErrorCode();
         int getState();
         std::string getBody();
         std::string getUrl();
@@ -65,10 +66,15 @@ class Request
         std::string _m_queryString;
 
         std::string _m_buf; // 잔여 버프들을 저장해놓는다.
+        void _M_appendBody(std::string &);
+
+        bool _M_checkBodyIsComing();
+        void _M_checkBodySize(size_t _size);
         
         void _M_parseStartLine(size_t n);
         void _M_parseRequestheader();
         void _M_parseBody();
+        void _M_parseBodyChunked(size_t n);
         void _M_parseKeyValue(std::string const &_line);
 
         void _M_parseValueWithComma(std::string const &_line, std::string key);

@@ -1,5 +1,7 @@
+#pragma once
 #include "./Request/Request.hpp"
 #include "./Response/Response.hpp"
+#include "Structure.hpp"
 
 class KqueueUdata
 {
