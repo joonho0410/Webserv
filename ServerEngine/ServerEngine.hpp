@@ -48,15 +48,15 @@ class ServerEngine
         void waitConnect(struct kevent& curr_event);
         void readRequest(struct kevent& curr_event);
         void readDocs(struct kevent& curr_event);
-        void readCgiResult();
+        void readCgiResult(struct kevent& curr_event);
         void writeResponse(struct kevent& curr_event);
-        void excuteCgi();
+        void excuteCgi(struct kevent& curr_event);
 
     public :
         ServerEngine();
         ~ServerEngine();
         
-        void make_serversocket();
         void start_kqueue();
+        void make_serversocket();
         void set_config_set(std::vector<struct server_config_struct> config);
 };

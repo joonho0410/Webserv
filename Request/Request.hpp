@@ -66,18 +66,18 @@ class Request
         std::string _m_queryString;
 
         std::string _m_buf; // 잔여 버프들을 저장해놓는다.
+
         void _M_appendBody(std::string &);
 
         bool _M_checkBodyIsComing();
         void _M_checkBodySize(size_t _size);
         
-        void _M_parseStartLine(size_t n);
-        void _M_parseRequestheader();
         void _M_parseBody();
+        void _M_parseRequestheader();
+        void _M_parseStartLine(size_t n);
         void _M_parseBodyChunked(size_t n);
-        void _M_parseKeyValue(std::string const &_line);
         void _M_parseStringQuery(std::string &_line);
-
+        void _M_parseKeyValue(std::string const &_line);
         void _M_parseValueWithComma(std::string const &_line, std::string key);
         void _M_parseValueWithSlash(std::string const &_line, std::string key);
 };

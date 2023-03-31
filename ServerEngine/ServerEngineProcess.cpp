@@ -95,14 +95,12 @@ void ServerEngine::executeRequest(struct kevent& curr_event, Request &req){
     /* GET DELETE METHOD SERVING STATIC HTML FILE */
     if (loca.key_and_value.find("root") != loca.key_and_value.end())
         serverUrl = (*loca.key_and_value["root"].begin()) + url;
-    if (url == "")
-    {
+    if (url == ""){
         /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
         serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
     }
     int fd = open(serverUrl.c_str(), O_RDONLY);
-    if (fd != -1)
-    {
+    if (fd != -1){
         _m_clients[fd] = "";
         fcntl(fd, F_SETFL, O_NONBLOCK);
         udata->setState(READ_DOCS);
@@ -123,8 +121,7 @@ void ServerEngine::readDocs(struct kevent& curr_event){
     int totalBytesRead = 0; // 총 읽은 바이트 수
 
     // 파일 끝에 도달할 때까지 반복
-    while ((bytesRead = read(curr_event.ident, buffer, 1023)) > 0)
-    {
+    while ((bytesRead = read(curr_event.ident, buffer, 1023)) > 0){
         std::string data;
 
         buffer[bytesRead] = '\0';
@@ -143,7 +140,7 @@ void ServerEngine::readDocs(struct kevent& curr_event){
     _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
 }
 
-void ServerEngine::readCgiResult(){
+void ServerEngine::readCgiResult(struct kevent& curr_event){
 
 }
 void ServerEngine::writeResponse(struct kevent& curr_event){
@@ -162,6 +159,6 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, curr_event.udata);
     return ;
 }
-void ServerEngine::excuteCgi(){
+void ServerEngine::excuteCgi(struct kevent& curr_event){
 
 }
