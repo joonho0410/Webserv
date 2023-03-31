@@ -18,7 +18,7 @@ enum Requset_error
 {
     OK,
     OVER_LENGTH,
-    WRONG_PARSING,
+    WRONG_PARSING, // 400 BAD REQUEST
     WRONG_BODY
 };
 
@@ -29,20 +29,20 @@ class Request
         ~Request(){}
 
         void show_save();
-        
+        void clean();
         void appendBuf(std::string &);
         void parseBuf();
+        bool checkValid();
 
         /* setter */
         void setBuf(std::string buf);
-        void setCheckHeader(bool);
-        void setCheckBody(bool);
         void setState(int);
         void setErrorCode(int);
 
         /* getter */
         int getErrorCode();
         int getState();
+
         std::string getBody();
         std::string getUrl();
         std::string getMethod();
@@ -76,6 +76,7 @@ class Request
         void _M_parseBody();
         void _M_parseBodyChunked(size_t n);
         void _M_parseKeyValue(std::string const &_line);
+        void _M_parseStringQuery(std::string &_line);
 
         void _M_parseValueWithComma(std::string const &_line, std::string key);
         void _M_parseValueWithSlash(std::string const &_line, std::string key);

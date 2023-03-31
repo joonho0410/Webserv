@@ -32,28 +32,24 @@ class ServerEngine
         std::vector<struct server_config_struct>  _m_server_config_set;
     
     private:
-        void _M_change_events(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
+        struct server_config_struct _M_findServerPort(std::string ports, std::string server_name);
+        struct server_config_struct _M_findLocationBlock(struct server_config_struct &_server_block, std::string &url);
+        KqueueUdata* _M_makeUdata(int state);
+        void _M_disconnectClient(struct kevent& , std::map<int, std::string>& clients);
+        void _M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
-        void _M_disconnect_client(int client_fd, std::map<int, std::string>& clients);
-        struct server_config_struct _M_find_server_and_port(std::string ports, std::string server_name);
-        struct server_config_struct _M_find_location_block(struct server_config_struct &_server_block, std::string &url);
-        KqueueUdata* _M_make_udata(int state);
-
-        int _M_solve_request();
-        int _M_serve_response();
-        Request _M_make_request(struct kevent& _curr_event);
-        void _M_check_request(Request &_req);
 
         /* switch case */
-        void _M_make_client_socket(struct kevent*);
-        void _M_read_request(struct kevent&, Request&);
+        void _M_makeClientSocket(struct kevent*);
+        void _M_readRequest(struct kevent&, Request&);
+        void executeRequest(struct kevent& curr_event, Request &req);
 
         /* switch case write at "ServerEngineProcess.cpp" */
         void waitConnect(struct kevent& curr_event);
         void readRequest(struct kevent& curr_event);
-        void readUrl();
+        void readDocs(struct kevent& curr_event);
         void readCgiResult();
-        void writeResponse();
+        void writeResponse(struct kevent& curr_event);
         void excuteCgi();
 
     public :

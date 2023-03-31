@@ -8,6 +8,21 @@ Request::Request()
     _m_errorCode = OK;
 }
 
+void Request::clean()
+{
+    _m_bodyMaxSize = 0;
+    _m_state = READ_START_LINE;
+    _m_errorCode = OK;
+    _m_header.clear();
+    _m_startLine.clear();
+    _m_body.clear();
+    _m_method.clear();
+    _m_url.clear();
+    _m_httpVersion.clear();
+    _m_queryString.clear();
+    _m_buf.clear();
+}
+
 void Request::_M_checkBodySize(size_t _size)
 {
     std::cout << "body line " << _m_body << std::endl;
@@ -59,7 +74,6 @@ void Request::parseBuf()
             case READ_START_LINE:
                 std::cout << "READ_START_LINE OCCURED" << std::endl;
                 _M_parseStartLine(findCRLF);
-                _m_buf = _m_buf.substr(findCRLF + 2);
                 break;
             case READ_HEADER:
                 std::cout << "READ_HEADER OCCURED" << std::endl;
@@ -83,14 +97,15 @@ void Request::_M_parseStartLine(size_t n)
 {
     size_t  keyStart = 0;
     size_t  keyEnd = 0;
+    size_t  pos;
+    size_t  questionMarkCount = 0;
 
     std::string key;
     std::string temp;
     std::string line;
 
     line = _m_buf.substr(0, n);
-    keyStart = line.find_first_not_of(" \t", keyEnd);
-    keyEnd = line.find_first_of(" \t", keyStart);
+    keyEnd = line.find_first_of(" ", keyStart);
     key = line.substr(keyStart, keyEnd - keyStart);
     if (!((key.compare("GET") == 0) || (key.compare("POST") == 0) || (key.compare("DELETE") == 0 )))
     {
@@ -100,20 +115,37 @@ void Request::_M_parseStartLine(size_t n)
         return ;
     }
     _m_method = key;
-    std::cout << "key : " << key << std::endl;
-    keyStart = line.find_first_not_of(" \t", keyEnd);
-    keyEnd = line.find_first_of(" \t", keyStart);
-    key = line.substr(keyStart, keyEnd - keyStart);
+    keyStart = keyEnd + 1;
 
-    _m_url = key;
-    std::cout << "url : " << key << std::endl;
-    keyStart = line.find_first_not_of(" \t", keyEnd);
-    keyEnd = line.find_first_of(" \t", keyStart);
+    keyEnd = line.find_first_of(" ", keyStart);
     key = line.substr(keyStart, keyEnd - keyStart);
+    while ((pos = key.find("?", pos)) != std::string::npos){
+        ++questionMarkCount;
+        if (questionMarkCount > 1)
+            break ;
+        ++pos;
+    }
+    if (questionMarkCount > 1){
+         _m_state = REQUEST_ERROR;   
+        _m_errorCode = WRONG_PARSING;
+        return ;
+    }
+    else if (questionMarkCount == 1)  
+        _M_parseStringQuery(key);
+    else
+        _m_url = key;
     
+    keyStart = keyEnd + 1;
+    key = line.substr(keyStart);
     keyStart = key.find_first_of("/", 0);
+    if (keyStart == std::string::npos)
+    {
+        std::cout << "is not http" << std::endl;
+        _m_state = REQUEST_ERROR;   
+        _m_errorCode = WRONG_PARSING;
+        return ;
+    }
     temp = key.substr(0, keyStart);
-    std::cout << "http : " << temp << std::endl;
     if (temp.compare("HTTP") != 0)
     {
         std::cout << "is not http" << std::endl;
@@ -130,7 +162,10 @@ void Request::_M_parseStartLine(size_t n)
         _m_errorCode = WRONG_PARSING;
         return ;
     }
+    _m_httpVersion = temp;
+
     _m_state = READ_HEADER;
+    _m_buf = _m_buf.substr(n + 2);
     return ;
 }
 
@@ -142,7 +177,7 @@ void Request::show_save()
     std::cout << "method : " << _m_method << std::endl;
     std::cout << "_m_url : " << _m_url << std::endl;
     std::cout << "_m_body : " << _m_body << std::endl;
-    for(; begin != end; ++ begin)
+    for(; begin != end; ++begin)
     {
         std::cout << "key : " << begin->first << std::endl;
         for (int i = 0; i < begin->second.size(); ++i)
@@ -176,9 +211,13 @@ void Request::_M_parseValueWithComma(std::string const &_line, std::string _key)
     }
 }
 
-void Request::_M_parseValueWithSlash(std::string const &_line, std::string _key)
+void Request::_M_parseStringQuery(std::string &_line)
 {
+    size_t pos;
 
+    pos = _line.find("?", 0);
+    _m_url = _line.substr(0, pos);
+    _m_queryString = _line.substr(pos + 1);
 }
 
 void Request::_M_parseBody()
@@ -202,13 +241,6 @@ void Request::_M_parseBody()
         _m_body.append(body);
         _m_buf.clear();
 
-        if (_m_bodyMaxSize != 0 && _m_body.size() > _m_bodyMaxSize)
-        {
-            _m_state = REQUEST_ERROR;
-            _m_errorCode = OVER_LENGTH;
-            return ;
-        }
-        show_save();
         _m_state = REQUEST_FINISH;
     }
     catch (std::length_error &e)
@@ -244,20 +276,14 @@ void Request::_M_parseBodyChunked(size_t CRLF)
         }
         bodyLen = static_cast<size_t>(decimalNum);
         lineStart = CRLF + 2;
-        if (_m_buf.find("\r\n", lineStart) == std::string::npos)
-            return ;
-        if (_m_buf.size() < length.size() + 2 + bodyLen + 2)
+        if (_m_buf.find("\r\n", lineStart) == std::string::npos || _m_buf.size() < length.size() + bodyLen + 4)
             return ;
         chunked_body = _m_buf.substr(lineStart, bodyLen);
         _M_appendBody(chunked_body);
-        _m_buf = _m_buf.substr(lineStart + bodyLen + 2);
+        _m_buf = _m_buf.substr(0, lineStart + bodyLen);
         if (bodyLen == 0 && chunked_body.empty()){
             _m_state = REQUEST_FINISH;
             return ;
-        }
-        if (_m_bodyMaxSize != 0 && _m_body.size() > _m_bodyMaxSize){
-            _m_state = REQUEST_ERROR;
-            _m_errorCode = OVER_LENGTH;
         }
     }
     catch (std::length_error &e)
@@ -279,13 +305,18 @@ void Request::_M_parseKeyValue(std::string const &line)
             _m_state = REQUEST_FINISH;
         return ;
     }
-    keyStart = line.find_first_not_of(" \t", keyStart);
     keyEnd = line.find_first_of(":", keyStart);
     if (keyEnd == std::string::npos){
         _m_state = REQUEST_ERROR;
+        _m_errorCode = WRONG_PARSING;
         return ;
     }
-    key = line.substr(keyStart, keyEnd - keyStart);
+    key = line.substr(0, keyEnd);
+    if (key.find(" \t") != std::string::npos){
+        _m_state = REQUEST_ERROR;
+        _m_errorCode = WRONG_PARSING;
+        return ;
+    }
     ft_toupper(key);
     _M_parseValueWithComma(line.substr(keyEnd + 1), key);
 }

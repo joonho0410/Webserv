@@ -1,6 +1,6 @@
 #include "ServerEngine.hpp"
 
-void ServerEngine::_M_change_events(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
+void ServerEngine::_M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
     struct kevent temp_event;
@@ -9,15 +9,17 @@ void ServerEngine::_M_change_events(std::vector<struct kevent>& change_list, uin
     change_list.push_back(temp_event);
 }
 
-void ServerEngine::_M_disconnect_client(int client_fd, std::map<int, std::string>& clients)
+void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, std::string>& clients)
 {
-    std::cout << "client disconnected: " << client_fd << std::endl;
-    close(client_fd);
-    clients.erase(client_fd);
+    std::cout << "client disconnected: " << curr_event.ident << std::endl;
+    close(curr_event.ident);
+    clients.erase(curr_event.ident);
+    if (curr_event.udata)
+        delete (KqueueUdata*)curr_event.udata;
 }
 
 struct server_config_struct
-ServerEngine::_M_find_server_and_port(std::string _ports, std::string _server_name)
+ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
 {
     std::vector<struct server_config_struct>::iterator begin = _m_server_config_set.begin();
     std::vector<struct server_config_struct>::iterator end = _m_server_config_set.end();
@@ -37,7 +39,7 @@ ServerEngine::_M_find_server_and_port(std::string _ports, std::string _server_na
 }
 
 struct server_config_struct
-ServerEngine::_M_find_location_block(struct server_config_struct &_server_block, std::string &_url)
+ServerEngine::_M_findLocationBlock(struct server_config_struct &_server_block, std::string &_url)
 {
     std::cout << "========== find location block =========== " << std::endl;
     size_t pos = 0;
@@ -68,7 +70,7 @@ void ServerEngine::set_config_set(std::vector<struct server_config_struct> _conf
     _m_server_config_set = _config;
 }
 
-KqueueUdata* ServerEngine::_M_make_udata(int state = 0)
+KqueueUdata* ServerEngine::_M_makeUdata(int state = 0)
 {
     KqueueUdata* data = new KqueueUdata();
     data->setState(state);
@@ -79,7 +81,7 @@ KqueueUdata* ServerEngine::_M_make_udata(int state = 0)
 /* SWITCH CASE FUNCTIONS */
 ///////////////////////////
 
-void ServerEngine::_M_make_client_socket(struct kevent *curr_event){
+void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
     int client_socket;
     
     if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
@@ -88,7 +90,7 @@ void ServerEngine::_M_make_client_socket(struct kevent *curr_event){
     fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
     /* add event for client socket - add read event */
-    _M_change_events(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_make_udata(READ_REQUEST));
+    _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
 }
 
 
@@ -108,14 +110,7 @@ ServerEngine::~ServerEngine()
     }
 }
 
-/* read file and make request form */
-int ServerEngine::_M_solve_request()
-{
-    return (0);
-}
-
-
-void ServerEngine::_M_read_request(struct kevent& _curr_event, Request& req)
+void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
 {
 
     char buf[1024];
@@ -126,7 +121,7 @@ void ServerEngine::_M_read_request(struct kevent& _curr_event, Request& req)
             if (n < 0){
                 std::cerr << "client read error!" << std::endl;
                 std::cerr << "read out\n";
-                _M_disconnect_client(_curr_event.ident, _m_clients);
+                _M_disconnectClient(_curr_event, _m_clients);
             }
             break ;
         }
@@ -142,12 +137,6 @@ void ServerEngine::_M_read_request(struct kevent& _curr_event, Request& req)
                 break;
         }
     }
-}
-
-/* write respose form for client */
-int ServerEngine::_M_serve_response()
-{
-    return (0);
 }
 
 /* make server socket using configFile */
@@ -196,7 +185,7 @@ void ServerEngine::start_kqueue()
 
     /* add event for server socket */
     for (int i = 0; i != _m_server_socket.size(); i++)
-        _M_change_events(_m_change_list, _m_server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, _M_make_udata());
+        _M_changeEvents(_m_change_list, _m_server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, _M_makeUdata());
     std::cout << "echo server started" << std::endl;
 
     /* main loop */
@@ -223,7 +212,7 @@ void ServerEngine::start_kqueue()
                 else
                 {
                     std::cerr << "client socket error" << std::endl;
-                    _M_disconnect_client(curr_event->ident, _m_clients);
+                    _M_disconnectClient(*curr_event, _m_clients);
                 }
             }
 
@@ -231,14 +220,14 @@ void ServerEngine::start_kqueue()
             else if (curr_event->flags & EV_EOF)
             {
                 std::cout << "EOF disconnection \n ";
-                _M_disconnect_client(curr_event->ident, _m_clients);
+                _M_disconnectClient(*curr_event, _m_clients);
             }
 
             /* Read Event */
             else if (curr_event->filter == EVFILT_READ)
             {
                 KqueueUdata *kdata = reinterpret_cast<KqueueUdata *>(curr_event->udata);
-                std::cout <<curr_event->ident << " : READ EVENT IS OCCUR " << std::endl;
+                std::cout << curr_event->ident << " : READ EVENT IS OCCUR " << std::endl;
                 switch(kdata->getState())
                 {
                     case WAIT_CONNECT:
@@ -248,6 +237,7 @@ void ServerEngine::start_kqueue()
                         readRequest(*curr_event);
                         break;
                     case READ_DOCS:
+                        readDocs(*curr_event);
                         break;
                     case READ_CGI_RESULT:
                         break;
@@ -260,10 +250,13 @@ void ServerEngine::start_kqueue()
             /* Write Event */
             else if (curr_event->filter == EVFILT_WRITE)
             {
-                switch(((KqueueUdata*)(curr_event->udata))->getState())
+                KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event->udata);
+                std::cout << "WRITE EVENT IS OCCURED " << std::endl;
+                std::cout << "WRITE STATE : " << udata->getState() << std::endl;
+                switch(udata->getState())
                 {
                     case WRITE_RESPONSE:
-                        _M_make_client_socket(curr_event);
+                        writeResponse(*curr_event);
                         break;
                     case EXCUTE_CGI:
                         break;
