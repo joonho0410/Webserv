@@ -92,7 +92,7 @@ void ServerEngine::executeRequest(struct kevent& curr_event, Request &req){
             return ;
         }
     }
-    /* GET DELETE METHOD SERVING STATIC HTML FILE */
+    /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
     if (loca.key_and_value.find("root") != loca.key_and_value.end())
         serverUrl = (*loca.key_and_value["root"].begin()) + url;
     if (url == ""){

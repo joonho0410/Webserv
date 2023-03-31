@@ -20,15 +20,15 @@ class KqueueUdata
         void clean();
 
         /* getter  & setter */
-        int getRequestedFd();
         int getState();
         int getReadPipe();
         int getWritePipe();
-        Response& getResponse();
+        int getRequestedFd();
         Request& getRequest();
+        Response& getResponse();
 
         void setState(int state);
-        void setResponse(Response res);
-        void setRequest(Request req);
         void setRequestedFd(int);
+        void setRequest(Request req);
+        void setResponse(Response res);
 };
