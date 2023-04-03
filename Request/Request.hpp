@@ -29,6 +29,7 @@ class Request
         std::string getUrl();
         std::string getMethod();
         std::string getBuf();
+        std::string getQueryString();
         std::map< std::string, std::vector<std::string> > getHeader();
 
     private:

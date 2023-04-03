@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: junhjeon <junhjeon@student.42seoul.kr>     +#+  +:+       +#+         #
+#    By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/10/27 17:07:45 by junhjeon          #+#    #+#              #
-#    Updated: 2022/12/27 21:04:15 by junhjeon         ###   ########.fr        #
+#    Updated: 2023/04/03 18:34:01 by jaehyuki         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,7 +18,8 @@ SRCS = ./main.cpp \
 	./ServerConfig/ServerConfig.cpp \
 	./ServerEngine/ServerEngine.cpp \
 	./Request/Request.cpp \
-	./Response/Response.cpp
+	./Response/Response.cpp	\
+	./CGI/CgiHandler.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 INCLUDE = .
