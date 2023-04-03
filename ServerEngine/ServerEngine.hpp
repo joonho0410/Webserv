@@ -20,7 +20,6 @@
 #include "../KqueueUdata.hpp"
 #include "../ParsingUtility.hpp"
 
-
 class ServerEngine
 {
     private:
@@ -42,7 +41,7 @@ class ServerEngine
         /* switch case */
         void _M_makeClientSocket(struct kevent*);
         void _M_readRequest(struct kevent&, Request&);
-        void executeRequest(struct kevent& curr_event, Request &req);
+        void _M_executeRequest(struct kevent& curr_event, Request &req);
 
         /* switch case write at "ServerEngineProcess.cpp" */
         void waitConnect(struct kevent& curr_event);

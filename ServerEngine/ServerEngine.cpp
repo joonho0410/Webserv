@@ -151,6 +151,13 @@ void ServerEngine::make_serversocket()
     std::string        key;
     size_t             keyStart;
     size_t             keyEnd;
+    struct linger      optLinger;
+    int optVal;
+    
+    optVal = 1;
+    optLinger.l_onoff = 1;
+    optLinger.l_linger = 0;
+    // 종료함수가 실행되면 안에있는 버퍼들은 모두 폐기하고 바로 종료시킨다.
 
     std::cout << "Server socket creating... " << std::endl;
     for(; begin != end; ++begin)
@@ -160,6 +167,11 @@ void ServerEngine::make_serversocket()
         {
             std::cout << "ports : " << ports_num << std::endl; 
             if ((new_socket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
+                exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+            /* setting socket option REUSEADDR & LINGER */
+            if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
+                exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+            if (setsockopt(new_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
                 exit_with_perror("socket() error\n" + std::string(strerror(errno)));
             memset(&server_addr, 0, sizeof(server_addr));
             server_addr.sin_family = AF_INET;

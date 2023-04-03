@@ -33,7 +33,7 @@ void ServerEngine::readRequest(struct kevent& curr_event){
         case REQUEST_FINISH:
             std::cout << "REQUEST_FINISH then req.show_save()" << std::endl;
             req.show_save();
-            executeRequest(curr_event, req);
+            _M_executeRequest(curr_event, req);
             break;
         default:
             /* 아직 parsing이 완료되지않았으므로 계속해서 파싱을 받아 온다. 타임아웃이 필요하다 */
@@ -43,8 +43,8 @@ void ServerEngine::readRequest(struct kevent& curr_event){
     }
 }
 
-void ServerEngine::executeRequest(struct kevent& curr_event, Request &req){
-    std::cout << "executeRequest" << std::endl;
+void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
+    std::cout << "_M_executeRequest" << std::endl;
 
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     struct server_config_struct serv;
