@@ -3,6 +3,7 @@
 #include <vector>
 #include <map>
 #include "../ParsingUtility.hpp"
+#include "Structure.hpp"
 
 enum Request_state
 {
@@ -33,6 +34,7 @@ class Request
         void appendBuf(std::string &);
         void parseBuf();
         bool checkValid();
+        bool checkBodySize(struct server_config_struct);
 
         /* setter */
         void setBuf(std::string buf);
@@ -59,18 +61,15 @@ class Request
         std::map< std::string, std::vector<std::string> > _m_header;
         std::string _m_startLine;
         std::string _m_body;
-
         std::string _m_method;
         std::string _m_url;
         std::string _m_httpVersion;
         std::string _m_queryString;
-
         std::string _m_buf; // 잔여 버프들을 저장해놓는다.
 
         void _M_appendBody(std::string &);
 
         bool _M_checkBodyIsComing();
-        void _M_checkBodySize(size_t _size);
         
         void _M_parseBody();
         void _M_parseRequestheader();

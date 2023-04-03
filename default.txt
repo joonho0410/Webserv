@@ -1,6 +1,7 @@
     server {
         listen       4242;
         server_name  localhost;
+        cgi          .php .sh  /cgi-bin/;
 
         #charset koi8-r;
 

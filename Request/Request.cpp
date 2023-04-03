@@ -23,15 +23,18 @@ void Request::clean()
     _m_buf.clear();
 }
 
-void Request::_M_checkBodySize(size_t _size)
+bool Request::checkBodySize(struct server_config_struct config)
 {
-    std::cout << "body line " << _m_body << std::endl;
-    std::cout << "body size : " << _m_body.size() << std::endl;
-    if (_m_body.size() > _size)
-    {
-        std::cout << "body size error " << std::endl;
-        exit(1);
+    if (config.key_and_value.find("client_max_body_size") != config.key_and_value.end()){
+        size_t client_body_size;
+        std::string temp;
+
+        temp = *(config.key_and_value.find("client_max_body_size")->second.begin());
+        client_body_size = static_cast<size_t> (std::atol(temp.c_str()));
+        if (client_body_size < _m_body.size())
+            return false;
     }
+    return true;
 }
 
 void Request::appendBuf(std::string &buf)

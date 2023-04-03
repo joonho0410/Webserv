@@ -54,6 +54,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     std::string serverName;
     std::string url;
     std::string serverUrl; // 실제로 서버부에서 찾아갈 주소 (root 이 존재할 경우 바뀐다.)
+    bool        isCgi = false;
+    bool        isBodyOk = true;
 
     /* HOST 는 반드시 필요한 헤더이므로 있는지 없는지 확인하는 작업이 필요하다  */
     if (req.getHeader().find("HOST") == req.getHeader().end())
@@ -69,46 +71,88 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     /* default server 에 대한 생각이 필요하다  && location block 을 찾지못할 경우에 Error Page에 대한 생각도 필요 */
     serv = _M_findServerPort(ports, serverName);
     loca = _M_findLocationBlock(serv, url);
-
-    if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end()){
-        size_t client_body_size;
+    
+    /* check is CGI */
+    if (serv.key_and_value.find("cgi") != serv.key_and_value.end()){
+        std::vector<std::string> cgi_value = serv.key_and_value.find("cgi")->second;
         std::string temp;
 
-        temp = *(loca.key_and_value.find("client_max_body_size")->second.begin());
-        client_body_size = static_cast<size_t> (std::atol(temp.c_str()));
-        if (client_body_size < req.getBody().size()){
-            /* 413 BAD REQUEST RETURN */
-            return ;
+        temp = req.getUrl();
+        for (int i = 0; i < cgi_value.size() - 1 ; ++ i){ 
+            if (temp.substr(temp.length() - cgi_value[i].length()) == cgi_value[i]) {
+                std::string temp = cgi_value.back();
+                loca = _M_findLocationBlock(serv, temp);
+                isCgi = true;
+                break ;
+            }
         }
     }
-    else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end()){       
-        size_t client_body_size;
-        std::string temp;
+
+    /* START CGI_PROCESS */
+    if (isCgi == true) {
+        /* check Body Size */ 
+        if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
+            isBodyOk = req.checkBodySize(loca);
+        else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
+            isBodyOk = req.checkBodySize(serv);
+        if (isBodyOk == false)
+            ;/* 413 BAD REQUEST return */
         
-        temp = *(loca.key_and_value.find("client_max_body_size")->second.begin());
-        client_body_size = static_cast<size_t> (std::atol(temp.c_str()));
-        if (client_body_size < req.getBody().size()){
-            /* 413 BAD REQUEST RETURN */
-            return ;
+        if (loca.key_and_value.find("alias") != loca.key_and_value.end())
+            serverUrl = *loca.key_and_value["alias"].begin() + url;
+        if (loca.key_and_value.find("root") != loca.key_and_value.end())
+            serverUrl = (*loca.key_and_value["root"].begin()) + req.getUrl();
+        if (url == ""){
+            /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
+            serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
         }
-    }
-    /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
-    if (loca.key_and_value.find("root") != loca.key_and_value.end())
-        serverUrl = (*loca.key_and_value["root"].begin()) + url;
-    if (url == ""){
-        /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
-        serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
-    }
-    int fd = open(serverUrl.c_str(), O_RDONLY);
-    if (fd != -1){
-        _m_clients[fd] = "";
-        fcntl(fd, F_SETFL, O_NONBLOCK);
-        udata->setState(READ_DOCS);
+        else
+            serverUrl = req.getUrl();
+        udata->setState(EXCUTE_CGI);
         udata->setRequestedFd(curr_event.ident);
-        _M_changeEvents(_m_change_list, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        std::cout << "==================" << std::endl;
+        std::cout << "CGI EVENT IS ADDED" << std::endl;
+        std::cout << "원본 url = " << req.getUrl() << std::endl;
+        std::cout << "url = " << url << std::endl;
+        std::cout << "serverUrl = " << serverUrl << std::endl;
+        /* pipe 혹은 새로운 파일을 생성해서 그 파일에 대한 read event가 가능할 때 넘겨줘야한다 */
+        //_M_changeEvents(_m_change_list, fd,  EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;
     }
-    else
-        std::cout << "open error" << std::endl;                            
+    else {
+        std::cout << "url is : " << url << std::endl;
+        /* check_Body_size */
+        if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
+            isBodyOk = req.checkBodySize(loca);
+        else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
+            isBodyOk = req.checkBodySize(serv);
+        if (isBodyOk == false)
+            ;/* 413 BAD REQUEST return */
+
+        /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
+        if (loca.key_and_value.find("alias") != loca.key_and_value.end())
+            serverUrl = *loca.key_and_value["alias"].begin() + url;
+        if (loca.key_and_value.find("root") != loca.key_and_value.end())
+            serverUrl = (*loca.key_and_value["root"].begin()) + req.getUrl();
+        if (url == ""){
+            /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
+            serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
+        }
+        std::cout << "server url is : " << serverUrl << std::endl;
+        int fd = open(serverUrl.c_str(), O_RDONLY);
+        if (fd != -1){
+            _m_clients[fd] = "";
+            fcntl(fd, F_SETFL, O_NONBLOCK);
+            udata->setState(READ_DOCS);
+            udata->setRequestedFd(curr_event.ident);
+            _M_changeEvents(_m_change_list, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        }
+        else{
+            // open error == 404 error //
+            std::cout << "open error" << std::endl;
+            _M_disconnectClient(curr_event, _m_clients);
+        }
+    }                            
     /* GET POST METHOD SERVING CGI */
 }
 

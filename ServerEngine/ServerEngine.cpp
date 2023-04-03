@@ -51,15 +51,20 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &_server_block, s
     temp = _url.substr(pos);
     while(pos != std::string::npos)
     {
+        std::cout << "strated " << std::endl;
+        str = _url.substr(0, pos + 1);
         std::cout << "pos : " << pos << std::endl;
         std::cout << "temp : " << temp << std::endl;
-        str = _url.substr(0, pos + 1);
+        std::cout << "str : " << str << std::endl;
         if (_server_block.location_block.find(str) == _server_block.location_block.end())
             break ;
         ret = _server_block.location_block[str];
-        temp = _url.substr(pos + 1);
-        pos = _url.find_first_of("/", pos + 1);        
+        pos = _url.find_first_of("/", pos + 1);
+        if (pos == std::string::npos)
+            break;
+        temp = _url.substr(pos + 1);        
     }
+    std::cout << "end " << std::endl;
     _url = temp;
     /* return default server ... need change */
     return (ret);
@@ -153,7 +158,7 @@ void ServerEngine::make_serversocket()
     size_t             keyEnd;
     struct linger      optLinger;
     int optVal;
-    
+
     optVal = 1;
     optLinger.l_onoff = 1;
     optLinger.l_linger = 0;
