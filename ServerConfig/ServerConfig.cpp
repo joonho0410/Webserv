@@ -26,16 +26,6 @@ void show_location_block(struct server_config_struct& config)
     }
 }
 
-bool ft_is_digit(std::string &str)
-{
-    for (int i = 0; i < str.size(); ++i)
-    {
-        if(!isdigit(str[i]))
-         return false;
-    }
-    return true;
-}
-
 /* public function */
 void ServerConfig::set_path(std::string path)
 {

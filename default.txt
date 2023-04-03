@@ -9,7 +9,7 @@
         location / {
             root   ./;
             client_max_body_size 1000;
-            index  test2.html;
+            index  test.html;
         }
 
         location /test {
@@ -23,8 +23,7 @@
 
             }
         }
-
-        location /cgi-bin {
+        location /cgi-bin/ {
             root ./;
         }
     }

@@ -2,8 +2,25 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include "../ParsingUtility.hpp"
 
-#include "../Structure.hpp"
+enum Request_state
+{
+    READ_START_LINE,
+    READ_HEADER,
+    READ_BODY,
+    READ_BODY_CHUNKED,
+    REQUEST_ERROR,
+    REQUEST_FINISH
+};
+
+enum Requset_error
+{
+    OK,
+    OVER_LENGTH,
+    WRONG_PARSING, // 400 BAD REQUEST
+    WRONG_BODY
+};
 
 class Request
 {
@@ -12,19 +29,20 @@ class Request
         ~Request(){}
 
         void show_save();
-        void check_body_size(size_t _size);
-        
+        void clean();
         void appendBuf(std::string &);
         void parseBuf();
+        bool checkValid();
 
         /* setter */
         void setBuf(std::string buf);
-        void setCheckHeader(bool);
-        void setCheckBody(bool);
         void setState(int);
+        void setErrorCode(int);
 
         /* getter */
+        int getErrorCode();
         int getState();
+
         std::string getBody();
         std::string getUrl();
         std::string getMethod();
@@ -33,7 +51,8 @@ class Request
         std::map< std::string, std::vector<std::string> > getHeader();
 
     private:
-        /* initialize with false */
+        /* initialize need */
+        size_t  _m_bodyMaxSize;
         int     _m_state;
         int     _m_errorCode;
 
@@ -48,12 +67,18 @@ class Request
         std::string _m_queryString;
 
         std::string _m_buf; // 잔여 버프들을 저장해놓는다.
-        
-        void _M_parseStartLine();
-        void _M_parseRequestheader(std::string const &_line);
-        void _M_parseBody(std::string const &_line);
-        void _M_parseKeyValue(std::string const &_line);
 
+        void _M_appendBody(std::string &);
+
+        bool _M_checkBodyIsComing();
+        void _M_checkBodySize(size_t _size);
+        
+        void _M_parseBody();
+        void _M_parseRequestheader();
+        void _M_parseStartLine(size_t n);
+        void _M_parseBodyChunked(size_t n);
+        void _M_parseStringQuery(std::string &_line);
+        void _M_parseKeyValue(std::string const &_line);
         void _M_parseValueWithComma(std::string const &_line, std::string key);
         void _M_parseValueWithSlash(std::string const &_line, std::string key);
 };

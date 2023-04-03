@@ -1,16 +1,9 @@
 #pragma once
-
 #include <iostream>
 #include <string>
 #include <cctype>
 
-// bool ft_is_digit(std::string &str)
-// {
-//     for (int i = 0; i < str.size(); ++i)
-//     {
-//         if(!isdigit(str[i]))
-//          return false;
-//     }
-//     return true;
-// }
-
+void ft_toupper(std::string &key);
+bool ft_ishexdigit(std::string &str);
+bool ft_is_digit(std::string &str);
+void exit_with_perror(const std::string& msg);

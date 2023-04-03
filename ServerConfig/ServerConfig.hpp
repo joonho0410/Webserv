@@ -1,5 +1,4 @@
 #pragma once
-
 #include "../Structure.hpp"
 #include "../ParsingUtility.hpp"
 
@@ -42,6 +41,5 @@ class ServerConfig
         void set_path(std::string path);
         void make_config();
         void show_config();
-        std::vector<struct server_config_struct> get_config() const;
-        
+        std::vector<struct server_config_struct> get_config() const;      
 };
