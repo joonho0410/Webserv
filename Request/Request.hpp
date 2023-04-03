@@ -38,6 +38,7 @@ class Request
         void setBuf(std::string buf);
         void setState(int);
         void setErrorCode(int);
+        void setBody(void) { this->_m_body = "Sample Body";}
 
         /* getter */
         int getErrorCode();

@@ -6,13 +6,11 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/03 18:28:11 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/03 19:58:07 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "CgiHandler.hpp"
-
-CgiHandler::CgiHandler(){}
 
 CgiHandler::CgiHandler(Request &request)
     : _m_request(request)
@@ -46,7 +44,7 @@ void    CgiHandler::_M_initEnv(Request &request)
     this->_m_env["CONTENT_LENGTH"] = "100";
     this->_m_env["CONTENT_TYPE"] = "application/json"; //헤더
     this->_m_env["GATEWAY_INTERFACE"] = "CGI/1.1"; //우리꺼
-    this->_m_env["PATH_INFO"] = "/test/cgi_tester"; "/test/cgi_tester.sh" // configure
+    this->_m_env["PATH_INFO"] = "/test/cgi_tester"; // configure
     this->_m_env["PATH_TRANSLATED"] = "./cgi-bin/cgi_tester"; // configure
     this->_m_env["QUERY_STRING"] = "sortBy=name&limit=10";
     this->_m_env["REMOTE_ADDR"] = "127.0.0.1"; //??
@@ -66,7 +64,7 @@ char    **CgiHandler::_M_get_envArr() const {
     char    **env = new char*[this->_m_env.size() + 1];
 
     int i = 0;
-    for (std::map<std::string, std::string>::iterator it = this->_m_env.begin(); it != this->_m_env.end(); it++){
+    for (std::map<std::string, std::string>::const_iterator it = this->_m_env.begin(); it != this->_m_env.end(); it++){
         std::string str = it->first + "=" + it->second;
         env[i] = new char[str.length() + 1];
         env[i] = strcpy(env[i], str.c_str());
@@ -78,8 +76,8 @@ char    **CgiHandler::_M_get_envArr() const {
 
 std::string CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
-    std::string body = this->request.getBody();
-    char        *script_name = this->_m_env.find("SCRIPT_NAME").c_str();
+    std::string body = this->_m_request.getBody();
+    const char        *script_name = this->_m_env.find("SCRIPT_NAME")->second.c_str();
     int         stdin_backup;
     int         stdout_backup;
     int         fd[2];
@@ -97,19 +95,25 @@ std::string CgiHandler::executeCgi() {
         close(fd[0]);
         dup2(fd[1], STDOUT);
         execve(script_name, NULL, env);
+        write(2, "\nEXECUTE ERROR!!\n", strlen("EXECUTE ERROR!!\n"));
     }
     else
     {
-        char    buf[BUF_SZIE] = {0};
+        char    buf[BUF_SIZE] = {0};
         int     len_read = 1;
 
+        waitpid(-1, 0, 0);
         while (len_read > 0)
         {
             memset(buf, 0, BUF_SIZE);
+            std::cout << "BEFORE" << std::endl;
             len_read = read(fd[0], buf, BUF_SIZE - 1);
+            std::cout << "AFTER" << std::endl;
+            std::cout << "읽음! : " <<std::to_string(len_read) << std::endl;
             rv += buf;
         }
+        close(fd[0]);
+        close(fd[1]);
     }
-
     return (rv);
 }

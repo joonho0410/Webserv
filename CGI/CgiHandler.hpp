@@ -14,7 +14,12 @@ class CgiHandler
         CgiHandler();
         CgiHandler(Request &request);
         ~CgiHandler(){};
+
+        std::string executeCgi();
     private:
-        Request                                         &_m_request;    
-        std::map< std::string, std::vector<std::string> _m_env;
+        Request                                             &_m_request;    
+        std::map<std::string, std::string>                  _m_env;
+
+        void    _M_initEnv(Request &request);
+        char    **_M_get_envArr() const;
 };

@@ -6,7 +6,7 @@
 #    By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/10/27 17:07:45 by junhjeon          #+#    #+#              #
-#    Updated: 2023/04/03 18:42:42 by jaehyuki         ###   ########.fr        #
+#    Updated: 2023/04/03 19:12:54 by jaehyuki         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,15 +14,15 @@ CXX = c++
 CPPFLAGS = #-Wall -Wextra -Werror -std=c++98 -g3
 SRC_DIR = .
 NAME = webserv
-SRCS = ./main.cpp \
+SRCS = ./test.cpp \
 	./ServerConfig/ServerConfig.cpp \
 	./ServerEngine/ServerEngine.cpp \
 	./ServerEngine/ServerEngineProcess.cpp\
 	./Request/Request.cpp \
 	./Response/Response.cpp	\
-	./CGI/CgiHandler.cpp
+	./CGI/CgiHandler.cpp	\
 	./KqueueUdata.cpp \
-	./ParsingUtility.cpp \
+	./ParsingUtility.cpp 
 
 
 OBJS = $(SRCS:.cpp=.o)
