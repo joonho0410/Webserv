@@ -20,6 +20,7 @@ void Request::clean()
     _m_url.clear();
     _m_httpVersion.clear();
     _m_queryString.clear();
+    _m_serverUrl.clear();
     _m_buf.clear();
 }
 
@@ -369,6 +370,7 @@ void Request::_M_parseRequestheader()
 void Request::setErrorCode( int errorCode ){ _m_errorCode = errorCode; }
 void Request::setState(int state){ _m_state = state; }
 void Request::setBuf(std::string buf){ _m_buf = buf; }
+void Request::setServerUrl(std::string &buf){ _m_serverUrl = buf; }
 
 /* getter */
 int Request::getState(){ return _m_state; }
@@ -378,4 +380,5 @@ std::string Request::getBody(){ return _m_body; }
 std::string Request::getUrl(){ return _m_url; }
 std::string Request::getMethod(){ return _m_method;}
 std::string Request::getQueryString(){ return _m_queryString; }
+std::string Request::getServerUrl(){ return _m_serverUrl; }
 std::map< std::string, std::vector<std::string> > Request::getHeader(){ return _m_header; }

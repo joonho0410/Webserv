@@ -107,7 +107,9 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
         }
         else
-            serverUrl = req.getUrl();
+            serverUrl = req.getUrl();        
+        req.setServerUrl(serverUrl);
+
 
         FILE    *outFile = tmpfile();
         FILE    *inFile = tmpfile();
@@ -207,14 +209,36 @@ void ServerEngine::readDocs(struct kevent& curr_event){
 
 void ServerEngine::readCgiResult(struct kevent& curr_event){
     /* read udata->outfile and make response */
+    std::cout << "READ CGI RESULT " << std::endl;
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+    char *buf;
 
+    int outFilefd = fileno(udata->getoutFile());
+    int size = lseek(outFilefd, 0, SEEK_END);
+    if (size == -1)
+        ;//50x server error
+    lseek(outFilefd, 0, SEEK_SET);
+    buf = new char[size + 1];
+    if (buf == 0)
+        ;//50x server error;
+    int readsize = read(outFilefd, buf, size);
+    if (readsize != size)
+        ;//50x server error;
+    buf[readsize] = '\0';
+    std::string str = std::string(buf);
+    udata->getResponse().apeendResponse(str);
+
+    delete []buf;
     /* 파일의 역할을 모두 했으니 여기서 close 해줘야할까? */
+    fclose(udata->getinFile());
+    fclose(udata->getoutFile());
     udata->setState(WRITE_RESPONSE);
+    std::cout << "READ CGI RESULT END" << std::endl;
     _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
 }
 
 void ServerEngine::writeResponse(struct kevent& curr_event){
+    std::cout << "WRITE RESPONSE IS OCCURED " << std::endl;
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     Response &res = udata->getResponse();
     Request &req = udata->getRequest();
@@ -227,16 +251,21 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
         std::cout << "WRITE ERROR" << std::endl;
     }
     udata->clean();
+    std::cout << "WRITE RESPONSE IS OCCURED " << std::endl;
     _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, curr_event.udata);
     return ;
 }
 
 void ServerEngine::excuteCgi(struct kevent& curr_event){
+    std::cout << "EXCUTE CGI IS OCCURED " << std::endl;
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+    Request&   req = udata->getRequest();
+    CgiHandler cgiHandler(req, fileno(udata->getinFile()), fileno(udata->getoutFile()));
 
-    /* do CGI ! */ 
+    cgiHandler.executeCgi();
     udata->setState(READ_CGI_RESULT);
     _M_changeEvents(_m_change_list, fileno(udata->getoutFile()), EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
+    std::cout << "EXCUTE CGI IS DONE " << std::endl;
 }
 
 void ServerEngine::writeCgiBody(struct kevent& curr_event){

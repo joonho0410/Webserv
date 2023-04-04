@@ -12,13 +12,15 @@ class CgiHandler
 {
     public:
         CgiHandler();
-        CgiHandler(Request &request);
+        CgiHandler(Request &request, int infile, int outfile);
         ~CgiHandler(){};
 
         std::string executeCgi();
     private:
         Request                                             &_m_request;    
         std::map<std::string, std::string>                  _m_env;
+        int                                                 _m_inFilefd;
+        int                                                 _m_outFilefd;
 
         void    _M_initEnv(Request &request);
         char    **_M_get_envArr() const;

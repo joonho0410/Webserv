@@ -19,6 +19,7 @@
 #include "../Request/Request.hpp"
 #include "../KqueueUdata.hpp"
 #include "../ParsingUtility.hpp"
+#include "../CGI/CgiHandler.hpp"
 
 class ServerEngine
 {

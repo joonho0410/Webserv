@@ -40,6 +40,7 @@ class Request
         void setBuf(std::string buf);
         void setState(int);
         void setErrorCode(int);
+        void setServerUrl(std::string &);
         void setBody(void) { this->_m_body = "Sample Body";}
 
         /* getter */
@@ -51,6 +52,7 @@ class Request
         std::string getMethod();
         std::string getBuf();
         std::string getQueryString();
+        std::string getServerUrl();
         std::map< std::string, std::vector<std::string> > getHeader();
 
     private:
@@ -65,6 +67,7 @@ class Request
         std::string _m_body;
         std::string _m_method;
         std::string _m_url;
+        std::string _m_serverUrl;
         std::string _m_httpVersion;
         std::string _m_queryString;
         std::string _m_buf; // 잔여 버프들을 저장해놓는다.

@@ -224,6 +224,7 @@ void ServerEngine::start_kqueue()
             /* check error event return */
             if (curr_event->flags & EV_ERROR)
             {
+                std::cout << "ERROR ! : " << curr_event->ident << std::endl;
                 if (std::find(_m_server_socket.begin(), _m_server_socket.end(), curr_event->ident) != _m_server_socket.end())
                     exit_with_perror("server socket error");
                 else
@@ -257,6 +258,7 @@ void ServerEngine::start_kqueue()
                         readDocs(*curr_event);
                         break;
                     case READ_CGI_RESULT:
+                        readCgiResult(*curr_event);
                         break;
                     default:
                         std::cout << "undefined state at read event " << std::endl;
