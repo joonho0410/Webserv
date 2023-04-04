@@ -108,15 +108,36 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         }
         else
             serverUrl = req.getUrl();
-        udata->setState(EXCUTE_CGI);
+
+        FILE    *outFile = tmpfile();
+        FILE    *inFile = tmpfile();
+        int     infd = fileno(outFile);
+        int     outfd = fileno(inFile);
+
+        udata->setinFile(inFile);
+        udata->setoutFile(outFile);
         udata->setRequestedFd(curr_event.ident);
+
+        if (req.getBody().size() == 0){
+            udata->setState(EXCUTE_CGI);
+            _M_changeEvents(_m_change_list, outfd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        }
+        else {
+            udata->setState(WRITE_CGI_BODY);
+            _M_changeEvents(_m_change_list, infd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        }
+       
+        /*
+        test form 
         std::cout << "==================" << std::endl;
         std::cout << "CGI EVENT IS ADDED" << std::endl;
         std::cout << "원본 url = " << req.getUrl() << std::endl;
         std::cout << "url = " << url << std::endl;
         std::cout << "serverUrl = " << serverUrl << std::endl;
+        */
+
         /* pipe 혹은 새로운 파일을 생성해서 그 파일에 대한 read event가 가능할 때 넘겨줘야한다 */
-        //_M_changeEvents(_m_change_list, fd,  EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        // fd = open 된 파이프의 read 부분?
         return ;
     }
     else {
@@ -185,8 +206,14 @@ void ServerEngine::readDocs(struct kevent& curr_event){
 }
 
 void ServerEngine::readCgiResult(struct kevent& curr_event){
+    /* read udata->outfile and make response */
+    KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
 
+    /* 파일의 역할을 모두 했으니 여기서 close 해줘야할까? */
+    udata->setState(WRITE_RESPONSE);
+    _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
 }
+
 void ServerEngine::writeResponse(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     Response &res = udata->getResponse();
@@ -203,6 +230,23 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, curr_event.udata);
     return ;
 }
-void ServerEngine::excuteCgi(struct kevent& curr_event){
 
+void ServerEngine::excuteCgi(struct kevent& curr_event){
+    KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+
+    /* do CGI ! */ 
+    udata->setState(READ_CGI_RESULT);
+    _M_changeEvents(_m_change_list, fileno(udata->getoutFile()), EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
+}
+
+void ServerEngine::writeCgiBody(struct kevent& curr_event){
+    KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+
+    Request &req = udata->getRequest();
+    std::string str = req.getBody();
+    if (write(curr_event.ident, str.c_str(), str.size()) == -1){
+        ;// return server error 50x 
+    }
+    udata->setState(EXCUTE_CGI);
+    _M_changeEvents(_m_change_list, fileno(udata->getoutFile()),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);   
 }

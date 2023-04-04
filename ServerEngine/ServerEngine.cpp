@@ -276,13 +276,16 @@ void ServerEngine::start_kqueue()
                         writeResponse(*curr_event);
                         break;
                     case EXCUTE_CGI:
+                        excuteCgi(*curr_event);
                         break;
+                    case WRITE_CGI_BODY:
+                        writeCgiBody(*curr_event);
+                        break;    
                     default:
                         std::cout << "undefined state at write event " << std::endl;
                 }
                 std::cout <<curr_event->ident << " : WRITE EVENT IS DONE " << std::endl;       
             }
-
         }
     }
     return ;

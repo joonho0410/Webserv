@@ -12,6 +12,8 @@ class KqueueUdata
         int         _m_state;
         Request     _m_req;
         Response    _m_res;
+        FILE*       _m_inFile;
+        FILE*       _m_outFile;
 
     public :
         KqueueUdata();
@@ -22,8 +24,8 @@ class KqueueUdata
 
         /* getter  & setter */
         int getState();
-        int getReadPipe();
-        int getWritePipe();
+        FILE* getinFile();
+        FILE* getoutFile();
         int getRequestedFd();
         Request& getRequest();
         Response& getResponse();
@@ -32,4 +34,6 @@ class KqueueUdata
         void setRequestedFd(int);
         void setRequest(Request req);
         void setResponse(Response res);
+        void setinFile(FILE *);
+        void setoutFile(FILE *);
 };
