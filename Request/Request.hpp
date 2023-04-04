@@ -40,6 +40,7 @@ class Request
         void setBuf(std::string buf);
         void setState(int);
         void setErrorCode(int);
+        void setBody(void) { this->_m_body = "Sample Body";}
 
         /* getter */
         int getErrorCode();
@@ -49,6 +50,7 @@ class Request
         std::string getUrl();
         std::string getMethod();
         std::string getBuf();
+        std::string getQueryString();
         std::map< std::string, std::vector<std::string> > getHeader();
 
     private:

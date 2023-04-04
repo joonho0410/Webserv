@@ -12,11 +12,16 @@
             client_max_body_size 1000;
             index  test.html;
         }
-        location /test/ {
+
+        location /test {
             root ./test/;
             index test3.html;
             location /*.sh {
                 cgi_pass ./cgi-bin/;
+            }
+            
+            location /*.py {
+
             }
         }
         location /cgi-bin/ {

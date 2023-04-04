@@ -377,4 +377,5 @@ std::string Request::getBuf(){ return _m_buf; }
 std::string Request::getBody(){ return _m_body; }
 std::string Request::getUrl(){ return _m_url; }
 std::string Request::getMethod(){ return _m_method;}
+std::string Request::getQueryString(){ return _m_queryString; }
 std::map< std::string, std::vector<std::string> > Request::getHeader(){ return _m_header; }
