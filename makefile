@@ -6,7 +6,7 @@
 #    By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/10/27 17:07:45 by junhjeon          #+#    #+#              #
-#    Updated: 2023/04/03 19:12:54 by jaehyuki         ###   ########.fr        #
+#    Updated: 2023/04/04 17:26:11 by jaehyuki         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -14,7 +14,7 @@ CXX = c++
 CPPFLAGS = #-Wall -Wextra -Werror -std=c++98 -g3
 SRC_DIR = .
 NAME = webserv
-SRCS = ./test.cpp \
+SRCS = ./main.cpp \
 	./ServerConfig/ServerConfig.cpp \
 	./ServerEngine/ServerEngine.cpp \
 	./ServerEngine/ServerEngineProcess.cpp\

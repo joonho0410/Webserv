@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/03 19:58:07 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/04 17:26:06 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,8 +56,8 @@ void    CgiHandler::_M_initEnv(Request &request)
     this->_m_env["SCRIPT_NAME"] = "./cgi-bin/cgi_tester"; // configure
     this->_m_env["SERVER_NAME"] = "localhost"; // 헤더 
     this->_m_env["SERVER_PORT"] = "4242"; // 헤더
-    this->_m_env["SERVER_PROTOCOL"] = "HTTP1.1";
-    this->_m_env["SERVER_SOFTWARE"] = "webServ";
+    this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
+    this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
 }
 
 char    **CgiHandler::_M_get_envArr() const {
@@ -67,33 +67,40 @@ char    **CgiHandler::_M_get_envArr() const {
     for (std::map<std::string, std::string>::const_iterator it = this->_m_env.begin(); it != this->_m_env.end(); it++){
         std::string str = it->first + "=" + it->second;
         env[i] = new char[str.length() + 1];
+        memset(env[i], 0, str.length() + 1);
         env[i] = strcpy(env[i], str.c_str());
+        i++;
     }
-    env[i] = NULL;
-    
+    env[i] = NULL;    
+    i = 0;
+    while (env[i])
+    {
+        std::cout << env[i] << std::endl;
+        i++;
+    }
     return (env);
 }
+
+#include <unistd.h>
 
 std::string CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
     std::string body = this->_m_request.getBody();
-    const char        *script_name = this->_m_env.find("SCRIPT_NAME")->second.c_str();
-    int         stdin_backup;
-    int         stdout_backup;
-    int         fd[2];
+    const char  *script_name = this->_m_env.find("SCRIPT_NAME")->second.c_str();
+    int         stdinBackup = dup(STDIN);
+    int         stdoutBackup = dup(STDOUT);
+    FILE        *inFile = tmpfile();
+    FILE        *outFile = tmpfile();
+    int         inFd = fileno(inFile);
+    int         outFd = fileno(outFile);
     int         pid;
     std::string rv;
-
-
-    stdin_backup = dup(STDIN);
-    stdout_backup = dup(STDOUT);
-    pipe(fd);
+    
+    write(inFd, body.c_str(), body.length());
     pid = fork();
     if (pid == 0)
     {
-        write(STDIN, body.c_str(), body.length());
-        close(fd[0]);
-        dup2(fd[1], STDOUT);
+        dup2(inFd, STDIN);
         execve(script_name, NULL, env);
         write(2, "\nEXECUTE ERROR!!\n", strlen("EXECUTE ERROR!!\n"));
     }
@@ -102,18 +109,20 @@ std::string CgiHandler::executeCgi() {
         char    buf[BUF_SIZE] = {0};
         int     len_read = 1;
 
+        dup2(outFd, STDOUT);
         waitpid(-1, 0, 0);
         while (len_read > 0)
         {
             memset(buf, 0, BUF_SIZE);
-            std::cout << "BEFORE" << std::endl;
-            len_read = read(fd[0], buf, BUF_SIZE - 1);
-            std::cout << "AFTER" << std::endl;
-            std::cout << "읽음! : " <<std::to_string(len_read) << std::endl;
+            len_read = read(outFd, buf, BUF_SIZE - 1);
             rv += buf;
         }
-        close(fd[0]);
-        close(fd[1]);
     }
+    dup2(STDIN, stdinBackup);
+    dup2(STDOUT, stdoutBackup);
+    fclose(inFile);
+    fclose(outFile);
+    close(inFd);
+    close(outFd);
     return (rv);
 }

@@ -9,12 +9,13 @@
 #include "./ServerEngine/ServerEngine.hpp"
 #include "./CGI/CgiHandler.hpp"
 
-int main(int argc, char** argv)
+int main(int argc, char** argv, char **env)
 {
     Request request = Request();
     request.setBody();
     CgiHandler handler = CgiHandler(request);
     std::string rv = handler.executeCgi();
-    std::cout << "{ " << rv << " }" << std::endl;
+    std::cerr << "done!" << std::endl;
+    std::cerr << "{ " << rv << " }" << std::endl;
     return (0);
 }
