@@ -23,5 +23,6 @@ class CgiHandler
         int                                                 _m_outFilefd;
 
         void    _M_initEnv(Request &request);
+        void    _M_findAndInit(std::string, std::string, std::map< std::string, std::vector< std::string > > &);
         char    **_M_get_envArr() const;
 };

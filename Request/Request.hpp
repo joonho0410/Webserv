@@ -53,7 +53,7 @@ class Request
         std::string getBuf();
         std::string getQueryString();
         std::string getServerUrl();
-        std::map< std::string, std::vector<std::string> > getHeader();
+        std::map< std::string, std::vector<std::string> >& getHeader();
 
     private:
         /* initialize need */

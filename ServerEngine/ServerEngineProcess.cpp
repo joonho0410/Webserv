@@ -28,11 +28,11 @@ void ServerEngine::readRequest(struct kevent& curr_event){
         case REQUEST_ERROR:
             std::cout << "REQEUST_ERROR OCCURED" << std::endl;
             res.setErrorCode(req.getErrorCode());
+            udata->setState(WRITE_RESPONSE);
             _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE , EV_ADD | EV_ONESHOT, 0, 0, udata);
             break;
         case REQUEST_FINISH:
             std::cout << "REQUEST_FINISH then req.show_save()" << std::endl;
-            req.show_save();
             _M_executeRequest(curr_event, req);
             break;
         default:
@@ -47,6 +47,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     std::cout << "_M_executeRequest" << std::endl;
 
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+    std::map< std::string, std::vector<std::string> > &header = req.getHeader();
     struct server_config_struct serv;
     struct server_config_struct loca;
     std::string host;
@@ -54,19 +55,28 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     std::string serverName;
     std::string url;
     std::string serverUrl; // 실제로 서버부에서 찾아갈 주소 (root 이 존재할 경우 바뀐다.)
+    Response& res = udata->getResponse();
     bool        isCgi = false;
     bool        isBodyOk = true;
 
-    /* HOST 는 반드시 필요한 헤더이므로 있는지 없는지 확인하는 작업이 필요하다  */
-    if (req.getHeader().find("HOST") == req.getHeader().end())
-        std::cout << "host error" << std::endl;
+    /* HOST 는 반드시 필요한 헤더이므로 있는지 없는지 확인하는 작업이 필요하다 존재하지않으면 40x error */
+    if (header.find("HOST") == header.end()){
+        std::cout << "HOST is not available " << std::endl;
+        req.setErrorCode(WRONG_PARSING);
+        res.setErrorCode(req.getErrorCode());
+        udata->setState(WRITE_RESPONSE);
+        _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE , EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;
+    } 
     else
-        host = *(req.getHeader().find("HOST")->second.begin());
+        host = *(header.find("HOST")->second.begin());
     /* 위의 코드는 임시로만든 Host 가 존재하는지 확인하는 코드 */
-    if (host.find(":") == std::string::npos)
-        ports = "80";
-    else
-        ports = host.substr(host.find(':'));
+    if (host.find(":") == std::string::npos){
+        serverName = host;
+    } else {
+        serverName = host.substr(0, host.find_first_of(":"));
+        ports = host.substr(host.find_first_of(":") + 1 );
+    }
     url = req.getUrl();
     /* default server 에 대한 생각이 필요하다  && location block 을 찾지못할 경우에 Error Page에 대한 생각도 필요 */
     serv = _M_findServerPort(ports, serverName);
@@ -120,7 +130,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         udata->setoutFile(outFile);
         udata->setRequestedFd(curr_event.ident);
 
-        if (req.getBody().size() == 0){
+        /* body의 존재 유무에 따라서 body를 넣어주고 실행할지 바로 실행할지 결정한다 */
+        if (req.getBody().size() == 0) {
             udata->setState(EXCUTE_CGI);
             _M_changeEvents(_m_change_list, outfd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         }
@@ -137,12 +148,9 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         std::cout << "url = " << url << std::endl;
         std::cout << "serverUrl = " << serverUrl << std::endl;
         */
-
-        /* pipe 혹은 새로운 파일을 생성해서 그 파일에 대한 read event가 가능할 때 넘겨줘야한다 */
-        // fd = open 된 파이프의 read 부분?
         return ;
-    }
-    else {
+
+    } else { // cgi가 아닌 요청들 처리
         std::cout << "url is : " << url << std::endl;
         /* check_Body_size */
         if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
@@ -197,11 +205,11 @@ void ServerEngine::readDocs(struct kevent& curr_event){
         totalBytesRead += bytesRead; // 읽은 바이트 수 누적
     }
 
-    if (bytesRead < 0) // 에러 발생 시 처리
-    {
+    if (bytesRead < 0){
         std::cout << "Read ERROR ! " << std::endl;
         return ;
     }
+
     close(curr_event.ident);
     udata->setState(WRITE_RESPONSE);
     _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);

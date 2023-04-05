@@ -15,7 +15,7 @@ void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, 
     close(curr_event.ident);
     clients.erase(curr_event.ident);
     if (curr_event.udata)
-        delete (KqueueUdata*)curr_event.udata;
+        delete reinterpret_cast<KqueueUdata*> (curr_event.udata);
 }
 
 struct server_config_struct
@@ -157,7 +157,7 @@ void ServerEngine::make_serversocket()
     size_t             keyStart;
     size_t             keyEnd;
     struct linger      optLinger;
-    int optVal;
+    int                optVal;
 
     optVal = 1;
     optLinger.l_onoff = 1;
@@ -214,7 +214,6 @@ void ServerEngine::start_kqueue()
         new_events = kevent(_m_kq, &_m_change_list[0], _m_change_list.size(), _m_event_list, 8, 0);
         if (new_events == -1)
             exit_with_perror("kevent() error\n" + std::string(strerror(errno)));
-
         _m_change_list.clear(); // clear _m_change_list for new changes
 
         for (int i = 0; i < new_events; ++i)
@@ -222,8 +221,7 @@ void ServerEngine::start_kqueue()
             curr_event = &_m_event_list[i];
 
             /* check error event return */
-            if (curr_event->flags & EV_ERROR)
-            {
+            if (curr_event->flags & EV_ERROR) {
                 std::cout << "ERROR ! : " << curr_event->ident << std::endl;
                 if (std::find(_m_server_socket.begin(), _m_server_socket.end(), curr_event->ident) != _m_server_socket.end())
                     exit_with_perror("server socket error");
@@ -235,57 +233,37 @@ void ServerEngine::start_kqueue()
             }
 
             /* EOF is coming disconnect client */
-            else if (curr_event->flags & EV_EOF)
-            {
+            else if (curr_event->flags & EV_EOF) {
                 std::cout << "EOF disconnection \n ";
                 _M_disconnectClient(*curr_event, _m_clients);
             }
 
             /* Read Event */
-            else if (curr_event->filter == EVFILT_READ)
-            {
-                KqueueUdata *kdata = reinterpret_cast<KqueueUdata *>(curr_event->udata);
+            else if (curr_event->filter == EVFILT_READ) {
+                KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event->udata);
                 std::cout << curr_event->ident << " : READ EVENT IS OCCUR " << std::endl;
-                switch(kdata->getState())
-                {
-                    case WAIT_CONNECT:
-                        waitConnect(*curr_event);
-                        break;
-                    case READ_REQUEST:
-                        readRequest(*curr_event);
-                        break;
-                    case READ_DOCS:
-                        readDocs(*curr_event);
-                        break;
-                    case READ_CGI_RESULT:
-                        readCgiResult(*curr_event);
-                        break;
-                    default:
-                        std::cout << "undefined state at read event " << std::endl;
+
+                switch(udata->getState()) {
+                    case WAIT_CONNECT:      waitConnect(*curr_event); break;
+                    case READ_REQUEST:      readRequest(*curr_event); break;
+                    case READ_DOCS:         readDocs(*curr_event); break;
+                    case READ_CGI_RESULT:   readCgiResult(*curr_event); break;
                 }
+
                 std::cout << curr_event->ident << " : READ EVNET IS DONE" << std::endl;
             }
                 
             /* Write Event */
-            else if (curr_event->filter == EVFILT_WRITE)
-            {
+            else if (curr_event->filter == EVFILT_WRITE) {
                 KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event->udata);
                 std::cout << "WRITE EVENT IS OCCURED " << std::endl;
-                std::cout << "WRITE STATE : " << udata->getState() << std::endl;
-                switch(udata->getState())
-                {
-                    case WRITE_RESPONSE:
-                        writeResponse(*curr_event);
-                        break;
-                    case EXCUTE_CGI:
-                        excuteCgi(*curr_event);
-                        break;
-                    case WRITE_CGI_BODY:
-                        writeCgiBody(*curr_event);
-                        break;    
-                    default:
-                        std::cout << "undefined state at write event " << std::endl;
+
+                switch(udata->getState()) {
+                    case WRITE_RESPONSE:    writeResponse(*curr_event); break;
+                    case EXCUTE_CGI:        excuteCgi(*curr_event); break;
+                    case WRITE_CGI_BODY:    writeCgiBody(*curr_event); break;
                 }
+
                 std::cout <<curr_event->ident << " : WRITE EVENT IS DONE " << std::endl;       
             }
         }

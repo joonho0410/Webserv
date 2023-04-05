@@ -19,12 +19,36 @@ CgiHandler::CgiHandler(Request &request,int infile, int outfile)
 
 }
 
+inline void CgiHandler::_M_findAndInit(std::string env, std::string headerEnv, std::map< std::string, std::vector< std::string > > &header)
+{
+    if (header.find(headerEnv) != header.end())
+        this->_m_env[env] = *(header[headerEnv].begin());
+    else
+        this->_m_env[env] = "";
+}
+
 void    CgiHandler::_M_initEnv(Request &request)
 {
+    std::cout << "init Env " << std::endl;
     std::map< std::string, std::vector< std::string > > header = request.getHeader();
-    this->_m_env["AUTH_TYPE"] = *(header["AUTHORIZATION"].begin());
-    this->_m_env["CONTENT_LENGTH"] = std::to_string(request.getBody().length());
-    this->_m_env["CONTENT_TYPE"] = *(header["CONTENT-TYPE"].begin());
+    std::string hostHeader;
+    size_t      deli;
+    
+    hostHeader = *(header["HOST"].begin());
+    deli = hostHeader.find_first_of(":");
+    if (deli != std::string::npos){
+        this->_m_env["SERVER_NAME"] = hostHeader.substr(0, deli);
+        this->_m_env["SERVER_PORT"] = hostHeader.substr(deli + 1);
+    } else {
+        this->_m_env["SERVER_NAME"] = hostHeader.substr(0, deli);
+        this->_m_env["SERVER_PORT"] = "80";
+    }
+    _M_findAndInit("AUTH_TYPE", "AUTHORIZATION", header);
+    _M_findAndInit("CONTENT_TYPE", "CONTENT-TYPE", header);
+    _M_findAndInit("SERVER_NAME", "HOST", header);
+
+    this->_m_env["CONTENT_LENGTH"] = std::to_string(request.getBody().length()); 
+    this->_m_env["CONTENT_TYPE"] = "";
     this->_m_env["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->_m_env["PATH_INFO"] = request.getUrl();
     this->_m_env["PATH_TRANSLATED"] = request.getServerUrl();
@@ -36,10 +60,12 @@ void    CgiHandler::_M_initEnv(Request &request)
     this->_m_env["REQUEST_METHOD"] = request.getMethod();
     this->_m_env["REQUEST_URI"] = request.getUrl();
     this->_m_env["SCRIPT_NAME"] = "./cgi-bin/cgi_tester";
-    this->_m_env["SERVER_NAME"] = *(header["HOSTNAME"].begin());
     this->_m_env["SERVER_PORT"] = "";
     this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
+
+    std::cout << "CGI GET URL : " << request.getUrl() << std::endl;
+    std::cout << "CGI GET ServerURL : " << request.getServerUrl() << std::endl;
 
 
     // this->_m_env["AUTH_TYPE"] = "Basic"; //헤더
@@ -60,6 +86,7 @@ void    CgiHandler::_M_initEnv(Request &request)
     // this->_m_env["SERVER_PORT"] = "4242"; // 헤더
     // this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     // this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
+    std::cout << "init Env is DONE " << std::endl;
 }
 
 char    **CgiHandler::_M_get_envArr() const {

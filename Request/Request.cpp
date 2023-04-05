@@ -381,4 +381,4 @@ std::string Request::getUrl(){ return _m_url; }
 std::string Request::getMethod(){ return _m_method;}
 std::string Request::getQueryString(){ return _m_queryString; }
 std::string Request::getServerUrl(){ return _m_serverUrl; }
-std::map< std::string, std::vector<std::string> > Request::getHeader(){ return _m_header; }
+std::map< std::string, std::vector<std::string> > &Request::getHeader(){ return _m_header; }
