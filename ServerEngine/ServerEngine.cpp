@@ -35,38 +35,55 @@ ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
         }
     }
     /* return default server ... need change */
+    // if default serverblock is defined return default block 
+    // else return valid false
+    _m_server_config_set.begin()->valid = false;
     return (*(_m_server_config_set.begin()));
 }
 
 struct server_config_struct
-ServerEngine::_M_findLocationBlock(struct server_config_struct &_server_block, std::string &_url)
+ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, std::string &url)
 {
     std::cout << "========== find location block =========== " << std::endl;
     size_t pos = 0;
     std::string str;
     std::string temp;
     struct server_config_struct ret;
+    bool        valid = false;
+
+    // if location block is empty return valid=false block; 
+    if (server_block.location_block.empty()) {
+        struct server_config_struct temp = {false};
+        return temp;
+    }
     
-    pos = _url.find_first_of("/", 0);
-    temp = _url.substr(pos);
-    while(pos != std::string::npos)
+    pos = url.find_first_of("/", 0);
+    temp = url.substr(pos + 1);
+    while (pos != std::string::npos)
     {
-        std::cout << "strated " << std::endl;
-        str = _url.substr(0, pos + 1);
-        std::cout << "pos : " << pos << std::endl;
-        std::cout << "temp : " << temp << std::endl;
-        std::cout << "str : " << str << std::endl;
-        if (_server_block.location_block.find(str) == _server_block.location_block.end())
+        // std::cout << "strated " << std::endl;
+        str = url.substr(0, pos + 1);
+        // std::cout << "pos : " << pos << std::endl;
+        // std::cout << "temp : " << temp << std::endl;
+        // std::cout << "str : " << str << std::endl;
+        if (server_block.location_block.find(str) == server_block.location_block.end())
             break ;
-        ret = _server_block.location_block[str];
-        pos = _url.find_first_of("/", pos + 1);
+        ret = server_block.location_block[str];
+        valid = true;
+        pos = url.find_first_of("/", pos + 1);
         if (pos == std::string::npos)
             break;
-        temp = _url.substr(pos + 1);        
+        temp = url.substr(pos + 1);        
     }
-    std::cout << "end " << std::endl;
-    _url = temp;
-    /* return default server ... need change */
+    // std::cout << "end " << std::endl;
+    
+    if (valid == false){
+        struct server_config_struct temp = {false};
+        return temp;
+    }
+    // std::cout << "temp : " << temp << std::endl;
+    // std::cout << "url : " << url << std::endl;
+    url = temp;
     return (ret);
 }
 

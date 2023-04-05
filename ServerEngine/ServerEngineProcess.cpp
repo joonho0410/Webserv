@@ -59,7 +59,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     bool        isCgi = false;
     bool        isBodyOk = true;
 
-    /* HOST 는 반드시 필요한 헤더이므로 있는지 없는지 확인하는 작업이 필요하다 존재하지않으면 40x error */
+    /* HOST 는 반드시 필요한 헤더이므로 있는지 없는지 확인하는 작업이 필요하다 존재하지않으면 40x error 나중에 header parsing 이 끝나면 check_valid 함수를 새로 파서 체크하는게 더 예쁠듯?*/
     if (header.find("HOST") == header.end()){
         std::cout << "HOST is not available " << std::endl;
         req.setErrorCode(WRONG_PARSING);
@@ -78,22 +78,35 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         ports = host.substr(host.find_first_of(":") + 1 );
     }
     url = req.getUrl();
-    /* default server 에 대한 생각이 필요하다  && location block 을 찾지못할 경우에 Error Page에 대한 생각도 필요 */
+    std::cout << "url : " << url << std::endl;
+    /* default server 에 대한 생각이 필요하다  && location block 을 찾지못할 경우에 그냥 바로 검색 */
     serv = _M_findServerPort(ports, serverName);
+    if (serv.valid == false){
+        ;// can't find server block return error 
+    }
     loca = _M_findLocationBlock(serv, url);
+    if (loca.valid == false){
+        loca = serv; // location block 을 찾을 수 없기에 serv 블록에 환경대로 실행한다.
+    }
     
     /* check is CGI */
     if (serv.key_and_value.find("cgi") != serv.key_and_value.end()){
         std::vector<std::string> cgi_value = serv.key_and_value.find("cgi")->second;
         std::string temp;
 
-        temp = req.getUrl();
-        for (int i = 0; i < cgi_value.size() - 1 ; ++ i){ 
-            if (temp.substr(temp.length() - cgi_value[i].length()) == cgi_value[i]) {
-                std::string temp = cgi_value.back();
-                loca = _M_findLocationBlock(serv, temp);
-                isCgi = true;
-                break ;
+        if (loca.block_name == cgi_value.back())
+            isCgi = true;
+        else {
+            temp = req.getUrl();
+            for (int i = 0; i < cgi_value.size() - 1 ; ++ i){ 
+                if (temp.length() < cgi_value[i].length())
+                    ;
+                else if (temp.substr(temp.length() - cgi_value[i].length()) == cgi_value[i]) {
+                    std::string temp = cgi_value.back();
+                    loca = _M_findLocationBlock(serv, temp);
+                    isCgi = true;
+                    break ;
+                }
             }
         }
     }
@@ -107,11 +120,11 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             isBodyOk = req.checkBodySize(serv);
         if (isBodyOk == false)
             ;/* 413 BAD REQUEST return */
-        
+
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
         if (loca.key_and_value.find("root") != loca.key_and_value.end())
-            serverUrl = (*loca.key_and_value["root"].begin()) + req.getUrl();
+            serverUrl = (*loca.key_and_value["root"].begin()) + loca.block_name + url;
         if (url == ""){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
             serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
@@ -120,7 +133,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             serverUrl = req.getUrl();        
         req.setServerUrl(serverUrl);
 
-
+        /* 함수 나누면 좋을듯? */
         FILE    *outFile = tmpfile();
         FILE    *inFile = tmpfile();
         int     infd = fileno(outFile);
@@ -164,10 +177,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
         if (loca.key_and_value.find("root") != loca.key_and_value.end())
-            serverUrl = (*loca.key_and_value["root"].begin()) + req.getUrl();
+            serverUrl = (*loca.key_and_value["root"].begin()) + loca.block_name + url;
         if (url == ""){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
-            serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
+            serverUrl = *loca.key_and_value["root"].begin() + loca.block_name + *loca.key_and_value["index"].begin();
         }
         std::cout << "server url is : " << serverUrl << std::endl;
         int fd = open(serverUrl.c_str(), O_RDONLY);

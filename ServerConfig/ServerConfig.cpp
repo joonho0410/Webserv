@@ -79,8 +79,8 @@ void ServerConfig::_M_parse_file()
     size_t                                              keyStart;
     size_t                                              keyEnd;
     std::map <std::string, std::vector<std::string> >   temp_key_and_value;
-    struct server_config_struct                         serverBlock;
-    struct server_config_struct                         locationBlock;
+    struct server_config_struct                         serverBlock = { true };
+    struct server_config_struct                         locationBlock = { true };
     std::vector <std::pair<std::string, struct server_config_struct> >           vector_loca;
     //open default file when _m_path is not defined;
     
@@ -125,6 +125,7 @@ void ServerConfig::_M_parse_file()
                     keyEnd = line.find_first_of(" \t{", keyStart);
                     key = line.substr(keyStart, keyEnd - keyStart);
                     save_location_name = key;
+                    locationBlock.block_name = key;
                     if (locationBlock.key_and_value.find(key) != locationBlock.key_and_value.end())
                         exit(1);
                     else // need add on location structure..
@@ -156,6 +157,7 @@ void ServerConfig::_M_parse_file()
                     keyEnd = line.find_first_of(" \t{", keyStart);
                     key = line.substr(keyStart, keyEnd - keyStart);
                     save_location_name = key;
+                    locationBlock.block_name = key;
                     if (locationBlock.key_and_value.find(key) != locationBlock.key_and_value.end())
                         exit(1);
                     // else // need add on location structure..
@@ -183,6 +185,7 @@ void ServerConfig::_M_parse_file()
                     else
                     {
                         serverBlock.location_block[save_location_name] = locationBlock;
+                        locationBlock.block_name.clear();
                         locationBlock.key_and_value.clear();
                         locationBlock.location_block.clear();
                         currentBlock_name = "server";
@@ -196,6 +199,7 @@ void ServerConfig::_M_parse_file()
                     serverBlock.location_block.clear();
                     locationBlock.key_and_value.clear();
                     locationBlock.location_block.clear();
+                    locationBlock.block_name.clear();
                     currentBlock_name.clear(); // 현재 블록 이름 초기화
                 }
             }

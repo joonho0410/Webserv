@@ -18,7 +18,6 @@ class Response
         void apeendResponse(std::string &);
     
         void setErrorCode(int);
-
         int& getErrorCode();
         std::string& getResponse();
 };
