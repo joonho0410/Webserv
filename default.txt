@@ -6,7 +6,7 @@
         #charset koi8-r;
 
         #access_log  logs/host.access.log  main;
-        
+
         location / {
             root   .;
             client_max_body_size 1000;
@@ -16,16 +16,20 @@
         location /test/ {
             root .;
             index test3.html;
-            location /*.sh {
-                cgi_pass ./cgi-bin/;
+            location /cgi-bin/ {
+                alias ./cgi-bin/;
             }
+            #http://localhost:8080/test/cgi-bin/tester/user/info
             
             location /*.py {
 
             }
+            
         }
+        
         location /cgi-bin/ {
             root .;
+            
         }
     }
 

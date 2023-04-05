@@ -98,7 +98,6 @@ void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
     _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
 }
 
-
 ServerEngine::ServerEngine()
 {
     std::cout << "Server engins created" << std::endl;

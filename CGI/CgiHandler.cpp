@@ -27,7 +27,7 @@ inline void CgiHandler::_M_findAndInit(std::string env, std::string headerEnv, s
         this->_m_env[env] = "";
 }
 
-void    CgiHandler::_M_initEnv(Request &request)
+void    CgiHandler::_M_initEnv(Request &request )
 {
     std::cout << "init Env " << std::endl;
     std::map< std::string, std::vector< std::string > > header = request.getHeader();
@@ -35,6 +35,8 @@ void    CgiHandler::_M_initEnv(Request &request)
     size_t      deli;
     
     hostHeader = *(header["HOST"].begin());
+    http://naver.com -> naver.com:80
+    htpps://naver.com -> naver.com:433
     deli = hostHeader.find_first_of(":");
     if (deli != std::string::npos){
         this->_m_env["SERVER_NAME"] = hostHeader.substr(0, deli);
@@ -45,10 +47,8 @@ void    CgiHandler::_M_initEnv(Request &request)
     }
     _M_findAndInit("AUTH_TYPE", "AUTHORIZATION", header);
     _M_findAndInit("CONTENT_TYPE", "CONTENT-TYPE", header);
-    _M_findAndInit("SERVER_NAME", "HOST", header);
 
     this->_m_env["CONTENT_LENGTH"] = std::to_string(request.getBody().length()); 
-    this->_m_env["CONTENT_TYPE"] = "";
     this->_m_env["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->_m_env["PATH_INFO"] = request.getUrl();
     this->_m_env["PATH_TRANSLATED"] = request.getServerUrl();
@@ -60,13 +60,11 @@ void    CgiHandler::_M_initEnv(Request &request)
     this->_m_env["REQUEST_METHOD"] = request.getMethod();
     this->_m_env["REQUEST_URI"] = request.getUrl();
     this->_m_env["SCRIPT_NAME"] = "./cgi-bin/cgi_tester";
-    this->_m_env["SERVER_PORT"] = "";
     this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
 
     std::cout << "CGI GET URL : " << request.getUrl() << std::endl;
     std::cout << "CGI GET ServerURL : " << request.getServerUrl() << std::endl;
-
 
     // this->_m_env["AUTH_TYPE"] = "Basic"; //헤더
     // this->_m_env["CONTENT_LENGTH"] = "100";
