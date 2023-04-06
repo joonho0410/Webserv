@@ -45,7 +45,6 @@ void ServerEngine::readRequest(struct kevent& curr_event){
             std::cout << "REQUEST_FINISH then req.show_save()" << std::endl;
             std::cout << "============= BODY =============" << std::endl;
             write(1, udata->getRequest().getBody().c_str(), udata->getRequest().getBody().length());
-            sleep(10);
             _M_executeRequest(curr_event, req);
             break;
         default:
@@ -101,20 +100,20 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     if (loca.valid == false){
         loca = serv; // location block 을 찾을 수 없기에 serv 블록에 환경대로 실행한다.
     }
-    
+
     /* check is CGI */
     if (serv.key_and_value.find("cgi") != serv.key_and_value.end()){
         std::vector<std::string> cgi_value = serv.key_and_value.find("cgi")->second;
-        std::string temp;
+        std::string str;
 
         if (loca.block_name == cgi_value.back())
             isCgi = true;
         else {
-            temp = req.getUrl();
+            str = req.getUrl();
             for (int i = 0; i < cgi_value.size() - 1 ; ++ i){ 
-                if (temp.length() < cgi_value[i].length())
+                if (str.length() < cgi_value[i].length())
                     ;
-                else if (temp.substr(temp.length() - cgi_value[i].length()) == cgi_value[i]) {
+                else if (str.substr(str.length() - cgi_value[i].length()) == cgi_value[i]) {
                     std::string temp = cgi_value.back();
                     loca = _M_findLocationBlock(serv, temp);
                     isCgi = true;
@@ -126,7 +125,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
 
     /* START CGI_PROCESS */
     if (isCgi == true) {
-        /* check Body Size */ 
+        /* check Body Size */
+        // url 에는 현재 /cgi-bin/hello/asdf 가 들어왔을 때 location block 이 /cgi-bin/ 에 해당한다면
+        // 나머지 hello/asdf 가 들어있는 상태이다... 이걸 path_info 로 넘겨야하는데 어떻게 넘길지 모르겠슴니다.
+        
         if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
             isBodyOk = req.checkBodySize(loca);
         else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
@@ -136,14 +138,14 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
 
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
-        if (loca.key_and_value.find("root") != loca.key_and_value.end())
+        else if (loca.key_and_value.find("root") != loca.key_and_value.end())
             serverUrl = (*loca.key_and_value["root"].begin()) + loca.block_name + url;
+        else
+            serverUrl = req.getUrl();
         if (url == ""){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
             serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
-        }
-        else
-            serverUrl = req.getUrl();        
+        }        
         req.setServerUrl(serverUrl);
 
         /* 함수 나누면 좋을듯? */
@@ -166,14 +168,14 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             _M_changeEvents(_m_change_list, infd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         }
        
-        /*
-        test form 
+        
+        //test form 
         std::cout << "==================" << std::endl;
         std::cout << "CGI EVENT IS ADDED" << std::endl;
         std::cout << "원본 url = " << req.getUrl() << std::endl;
         std::cout << "url = " << url << std::endl;
         std::cout << "serverUrl = " << serverUrl << std::endl;
-        */
+        
         return ;
 
     } else { // cgi가 아닌 요청들 처리
@@ -247,7 +249,7 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     char *buf;
 
-    int outFilefd = fileno(udata->getoutFile());
+    int outFilefd = curr_event.ident;
     int size = lseek(outFilefd, 0, SEEK_END);
     if (size == -1)
         ;//50x server error

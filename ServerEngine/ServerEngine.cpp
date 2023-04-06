@@ -45,11 +45,11 @@ struct server_config_struct
 ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, std::string &url)
 {
     std::cout << "========== find location block =========== " << std::endl;
-    size_t pos = 0;
-    std::string str;
-    std::string temp;
     struct server_config_struct ret;
-    bool        valid = false;
+    std::string locationString;
+    std::string pathString;
+    size_t pos = 0;
+    bool valid = false;
 
     // if location block is empty return valid=false block; 
     if (server_block.location_block.empty()) {
@@ -58,22 +58,21 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
     }
     
     pos = url.find_first_of("/", 0);
-    temp = url.substr(pos + 1);
+    pathString = url.substr(pos + 1);
     while (pos != std::string::npos)
     {
-        // std::cout << "strated " << std::endl;
-        str = url.substr(0, pos + 1);
-        // std::cout << "pos : " << pos << std::endl;
-        // std::cout << "temp : " << temp << std::endl;
-        // std::cout << "str : " << str << std::endl;
-        if (server_block.location_block.find(str) == server_block.location_block.end())
+        locationString = url.substr(0, pos + 1);
+        std::cout << "pos : " << pos << std::endl;
+        std::cout << "pathString : " << pathString << std::endl;
+        std::cout << "locationString : " << locationString << std::endl;
+        if (server_block.location_block.find(locationString) == server_block.location_block.end())
             break ;
-        ret = server_block.location_block[str];
-        valid = true;
+        ret = server_block.location_block[locationString];
+        pathString = url.substr(pos + 1);
         pos = url.find_first_of("/", pos + 1);
+        valid = true;
         if (pos == std::string::npos)
             break;
-        temp = url.substr(pos + 1);        
     }
     // std::cout << "end " << std::endl;
     
@@ -83,7 +82,7 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
     }
     // std::cout << "temp : " << temp << std::endl;
     // std::cout << "url : " << url << std::endl;
-    url = temp;
+    url = pathString;
     return (ret);
 }
 
