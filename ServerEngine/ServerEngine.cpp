@@ -248,6 +248,12 @@ void ServerEngine::start_kqueue()
                 }
             }
 
+            /* catch cgi process is end */
+            else if (curr_event->filter == EVFILT_PROC && curr_event->fflags == NOTE_EXIT){
+                std::cout << "CGI PROCESS IS DONE" << std::endl;
+                waitCgiEnd(*curr_event);
+            }
+
             /* EOF is coming disconnect client */
             else if (curr_event->flags & EV_EOF) {
                 std::cout << "EOF disconnection \n ";

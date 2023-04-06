@@ -52,6 +52,7 @@ class ServerEngine
         void writeResponse(struct kevent& curr_event);
         void excuteCgi(struct kevent& curr_event);
         void writeCgiBody(struct kevent& curr_event);
+        void waitCgiEnd(struct kevent &curr_event);
 
     public :
         ServerEngine();

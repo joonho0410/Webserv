@@ -16,7 +16,6 @@ CgiHandler::CgiHandler(Request &request,int infile, int outfile)
     : _m_request(request), _m_inFilefd(infile), _m_outFilefd(outfile)
 {
     _M_initEnv(this->_m_request);
-
 }
 
 inline void CgiHandler::_M_findAndInit(std::string env, std::string headerEnv, std::map< std::string, std::vector< std::string > > &header)
@@ -35,8 +34,6 @@ void    CgiHandler::_M_initEnv(Request &request )
     size_t      deli;
     
     hostHeader = *(header["HOST"].begin());
-    http://naver.com -> naver.com:80
-    htpps://naver.com -> naver.com:433
     deli = hostHeader.find_first_of(":");
     if (deli != std::string::npos){
         this->_m_env["SERVER_NAME"] = hostHeader.substr(0, deli);
@@ -59,7 +56,7 @@ void    CgiHandler::_M_initEnv(Request &request )
     this->_m_env["REMOTE_USER"] = "";
     this->_m_env["REQUEST_METHOD"] = request.getMethod();
     this->_m_env["REQUEST_URI"] = request.getUrl();
-    this->_m_env["SCRIPT_NAME"] = "./cgi-bin/cgi_tester";
+    this->_m_env["SCRIPT_NAME"] = "./cgi-bin/test_sleep.sh";
     this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
 
@@ -110,20 +107,15 @@ char    **CgiHandler::_M_get_envArr() const {
 
 #include <unistd.h>
 
-std::string CgiHandler::executeCgi() {
+int CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
     std::string body = this->_m_request.getBody();
     const char  *script_name = this->_m_env.find("SCRIPT_NAME")->second.c_str();
     int         stdinBackup = dup(STDIN);
     int         stdoutBackup = dup(STDOUT);
-    // FILE        *inFile = tmpfile();
-    // FILE        *outFile = tmpfile();
-    // int         inFd = fileno(inFile);
-    // int         outFd = fileno(outFile);
     int         pid;
     std::string rv;
     
-    // write(_m_inFilefd, body.c_str(), body.length());
     pid = fork();
     if (pid == 0)
     {
@@ -138,9 +130,8 @@ std::string CgiHandler::executeCgi() {
         int     len_read = 1;
 
         std::cout << "waiting cgi is done" << std::endl;
-        waitpid(-1, 0, 0);
-        lseek(_m_outFilefd, 0, SEEK_SET);
     }
+
     std::cout << "executed CGI is done !" << std::endl;
     int i = 0;
     while (env[i] != 0){
@@ -148,5 +139,5 @@ std::string CgiHandler::executeCgi() {
         ++i;
     }
     delete []env;
-    return (rv);
+    return (pid);
 }

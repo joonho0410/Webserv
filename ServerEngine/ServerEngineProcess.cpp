@@ -1,5 +1,15 @@
 #include "ServerEngine.hpp"
 
+void ServerEngine::waitCgiEnd(struct kevent &curr_event){
+    KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+    int status;
+
+    waitpid(curr_event.ident, &status, 0);
+    udata->setState(READ_CGI_RESULT);
+    lseek(fileno(udata->getoutFile()), 0, SEEK_SET);
+    _M_changeEvents(_m_change_list, fileno(udata->getoutFile()), EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
+}
+
 void ServerEngine::waitConnect(struct kevent &curr_event){
     int client_socket;
     
@@ -33,6 +43,9 @@ void ServerEngine::readRequest(struct kevent& curr_event){
             break;
         case REQUEST_FINISH:
             std::cout << "REQUEST_FINISH then req.show_save()" << std::endl;
+            std::cout << "============= BODY =============" << std::endl;
+            write(1, udata->getRequest().getBody().c_str(), udata->getRequest().getBody().length());
+            sleep(10);
             _M_executeRequest(curr_event, req);
             break;
         default:
@@ -282,10 +295,11 @@ void ServerEngine::excuteCgi(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     Request&   req = udata->getRequest();
     CgiHandler cgiHandler(req, fileno(udata->getinFile()), fileno(udata->getoutFile()));
+    int pid;
 
-    cgiHandler.executeCgi();
-    udata->setState(READ_CGI_RESULT);
-    _M_changeEvents(_m_change_list, fileno(udata->getoutFile()), EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
+    pid = cgiHandler.executeCgi();
+    udata->setState(WAIT_CGI_END);
+    _M_changeEvents(_m_change_list, pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, udata);
     std::cout << "EXCUTE CGI IS DONE " << std::endl;
 }
 
