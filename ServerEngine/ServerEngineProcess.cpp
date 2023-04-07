@@ -33,6 +33,8 @@ void ServerEngine::readRequest(struct kevent& curr_event){
             break;
         case REQUEST_FINISH:
             std::cout << "REQUEST_FINISH then req.show_save()" << std::endl;
+            std::cout << "============== BODY =================" << std::endl;
+            std::cout << req.getBody() << std::endl;
             _M_executeRequest(curr_event, req);
             break;
         default:
@@ -123,14 +125,14 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
 
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
-        if (loca.key_and_value.find("root") != loca.key_and_value.end())
+        else if (loca.key_and_value.find("root") != loca.key_and_value.end())
             serverUrl = (*loca.key_and_value["root"].begin()) + loca.block_name + url;
-        if (url == ""){
+        else if (url == ""){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
             serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
         }
         else
-            serverUrl = req.getUrl();        
+            serverUrl = req.getUrl();
         req.setServerUrl(serverUrl);
 
         /* 함수 나누면 좋을듯? */
@@ -251,6 +253,8 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
 
     delete []buf;
     /* 파일의 역할을 모두 했으니 여기서 close 해줘야할까? */
+    //close(fileno(udata->getinFile()));
+    //close(fileno(udata->getoutFile()));
     fclose(udata->getinFile());
     fclose(udata->getoutFile());
     udata->setState(WRITE_RESPONSE);
