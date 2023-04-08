@@ -1,6 +1,6 @@
     server {
         listen       4242;
-        server_name  localhost;
+        server_name  127.0.0.1;
         cgi          .php .sh  /cgi-bin/;
 
         #charset koi8-r;
@@ -18,18 +18,14 @@
             index test3.html;
             location /cgi-bin/ {
                 alias ./cgi-bin/;
+            }            
+            location /*.py/ {
+                root .;
             }
-            #http://localhost:8080/test/cgi-bin/tester/user/info
-            
-            location /*.py {
-
-            }
-            
         }
         
         location /cgi-bin/ {
             root .;
-            
         }
     }
 

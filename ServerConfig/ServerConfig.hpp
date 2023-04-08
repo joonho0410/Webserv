@@ -33,9 +33,8 @@ class ServerConfig
         void _M_parse_line(struct server_config_struct &config, std::string &line);
 
         void _M_check_config();
+        void _M_check_serverName(std::vector<struct server_config_struct >::iterator _temp);
         void _M_check_listen(std::vector<struct server_config_struct>::iterator _temp);
-        void _M_check_ip(std::string str);
-        void _M_check_root(std::vector<struct server_config_struct>::iterator _temp);
         
     /* public function */
     public :

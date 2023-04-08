@@ -21,17 +21,25 @@ void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, 
 struct server_config_struct
 ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
 {
+    std::cout << "_M_findServerPorts " << std::endl;
+    std::cout << "ports :" << _ports << std::endl;
+    std::cout << "server_name : " << _server_name << std::endl;
     std::vector<struct server_config_struct>::iterator begin = _m_server_config_set.begin();
     std::vector<struct server_config_struct>::iterator end = _m_server_config_set.end();
+    std::vector<std::string> temp;
+
+    if(_server_name == "localhost")
+        _server_name = "127.0.0.1";
 
     for(; begin != end; ++begin)
-    {
-        if ((*begin).key_and_value.find(_ports) != (*begin).key_and_value.end())
+    { 
+        if ((*begin).key_and_value.find("listen")->second.front() == _ports)
         {
-            if ((*begin).key_and_value.find(_server_name) != (*begin).key_and_value.end())
-            {
-                return (*begin);
-            }
+            temp = (*begin).key_and_value.find("server_name")->second;
+            for (int i = 0; i < temp.size(); ++ i){
+                if (temp[i] == _server_name)
+                    return (*begin);
+            } 
         }
     }
     /* return default server ... need change */
@@ -150,7 +158,7 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
             std::string temp = std::string(buf);
             req.appendBuf(temp);
             req.parseBuf();
-            if (req.getState() == REQUEST_FINISH || req.getState() == REQUEST_FINISH)
+            if (req.getState() == REQUEST_FINISH || req.getState() == REQUEST_ERROR)
                 break;
             memset(buf, 0, sizeof(buf));
             if (n < 1023)
@@ -178,6 +186,7 @@ void ServerEngine::make_serversocket()
     optLinger.l_onoff = 1;
     optLinger.l_linger = 0;
     // 종료함수가 실행되면 안에있는 버퍼들은 모두 폐기하고 바로 종료시킨다.
+    // l_linger 가 0이 아니면 해당시간동안 대기하면서 버퍼에있는 내용들을 가지고있는다.
 
     std::cout << "Server socket creating... " << std::endl;
     for(; begin != end; ++begin)

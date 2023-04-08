@@ -4,9 +4,16 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     int status;
 
-    waitpid(curr_event.ident, &status, 0);
-    udata->setState(READ_CGI_RESULT);
+    waitpid(curr_event.ident, &status, 0);//프로세스 회수
+    if (WIFEXITED(status)){
+        if(WEXITSTATUS(status) != 0 )
+            std::cout << "process not ended with 0 " << std::endl;// 비 정상 종료 이므로 50x error
+    } else {
+        std::cout << "process ennded with some signal" << std::endl;// 마찬가지로 비정상 종료이므로 50x error
+    }
+
     lseek(fileno(udata->getoutFile()), 0, SEEK_SET);
+    udata->setState(READ_CGI_RESULT);
     _M_changeEvents(_m_change_list, fileno(udata->getoutFile()), EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
 }
 
@@ -85,6 +92,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     /* 위의 코드는 임시로만든 Host 가 존재하는지 확인하는 코드 */
     if (host.find(":") == std::string::npos){
         serverName = host;
+        ports = "80";
     } else {
         serverName = host.substr(0, host.find_first_of(":"));
         ports = host.substr(host.find_first_of(":") + 1 );
@@ -94,11 +102,11 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     /* default server 에 대한 생각이 필요하다  && location block 을 찾지못할 경우에 그냥 바로 검색 */
     serv = _M_findServerPort(ports, serverName);
     if (serv.valid == false){
-        ;// can't find server block return error 
-    }
-    loca = _M_findLocationBlock(serv, url);
-    if (loca.valid == false){
-        loca = serv; // location block 을 찾을 수 없기에 serv 블록에 환경대로 실행한다.
+        std::cout << " can't find server block " << std::endl; // can't find server block return error 
+    } else {
+        loca = _M_findLocationBlock(serv, url);
+        if (loca.valid == false)
+            loca = serv; // location block 을 찾을 수 없기에 serv 블록에 환경대로 실행한다.
     }
 
     /* check is CGI */
