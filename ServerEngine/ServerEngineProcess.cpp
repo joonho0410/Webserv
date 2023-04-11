@@ -138,6 +138,13 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         /* check Body Size */
         // url 에는 현재 /cgi-bin/hello/asdf 가 들어왔을 때 location block 이 /cgi-bin/ 에 해당한다면
         // 나머지 hello/asdf 가 들어있는 상태이다... 이걸 path_info 로 넘겨야하는데 어떻게 넘길지 모르겠슴니다.
+
+         /* check metohd is allowed */ 
+        if (!_M_checkMethod(serv, loca, req.getMethod())){
+            std::cout << "not allowed method" << std::endl;//not allowed method;
+            exit(1);// replace need 405 error;
+        }
+
         if (req.getMethod().compare("POST") == 0) {
             if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
                 isBodyOk = req.checkBodySize(loca);
@@ -162,21 +169,21 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         /* 함수 나누면 좋을듯? */
         FILE    *outFile = tmpfile();
         FILE    *inFile = tmpfile();
-        int     infd = fileno(outFile);
-        int     outfd = fileno(inFile);
+        int     infd = fileno(inFile);
+        int     outfd = fileno(outFile);
 
         udata->setinFile(inFile);
         udata->setoutFile(outFile);
         udata->setRequestedFd(curr_event.ident);
 
         /* body의 존재 유무에 따라서 body를 넣어주고 실행할지 바로 실행할지 결정한다 */
-        if (req.getBody().size() == 0) {
-            udata->setState(EXCUTE_CGI);
-            _M_changeEvents(_m_change_list, outfd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
-        }
-        else {
+        if (req.getBody().size() != 0 && req.getMethod().compare("POST") == 0) {
             udata->setState(WRITE_CGI_BODY);
             _M_changeEvents(_m_change_list, infd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        }
+        else {
+            udata->setState(EXCUTE_CGI);
+            _M_changeEvents(_m_change_list, outfd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         }
        
         
@@ -191,6 +198,13 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
 
     } else { // cgi가 아닌 요청들 처리
         std::cout << "url is : " << url << std::endl;
+
+        /* check metohd is allowed */
+        if (!_M_checkMethod(serv, loca, req.getMethod())){
+            std::cout << "not allowed method" << std::endl;//not allowed method;
+            exit(1);// replace need 405 error;
+        }
+
         /* check_Body_size */
         if(req.getMethod().compare("POST") == 0) {
             if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
@@ -204,8 +218,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
-        if (loca.key_and_value.find("root") != loca.key_and_value.end())
+        else if (loca.key_and_value.find("root") != loca.key_and_value.end())
             serverUrl = (*loca.key_and_value["root"].begin()) + loca.block_name + url;
+        else
+            serverUrl = req.getUrl();
         if (url == ""){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
             serverUrl = *loca.key_and_value["root"].begin() + loca.block_name + *loca.key_and_value["index"].begin();
@@ -296,7 +312,7 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     const char* ret = responseString.c_str();
     int len = responseString.length();
     int bytes_written = write(curr_event.ident, ret, len);
-
+    
     if (bytes_written < 0){
         std::cout << "WRITE ERROR" << std::endl;
     }

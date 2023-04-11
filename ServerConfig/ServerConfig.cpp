@@ -390,11 +390,11 @@ void ServerConfig::_M_check_listen(std::vector<struct server_config_struct >::it
         _temp->key_and_value["listen"].push_back(ports);
     }
     else if (search->second.size() == 2 && search->second[1] == "default_server") {
-        if (_temp->key_and_value.find("server_name") == _temp->key_and_value.end()){
+        if (_temp->key_and_value.find("server_name") == _temp->key_and_value.end()) {
             std::cout << "server_name error " << std::endl;
             exit(1);
         }
-        else if (_temp->key_and_value["server_name"].size() != 1 && _temp->key_and_value["server_name"].front() != "_"){
+        else if (_temp->key_and_value["server_name"].size() != 1 && _temp->key_and_value["server_name"].front() != "_") {
             std::cout << "listen default server error" << std::endl;
             exit(1);
         }

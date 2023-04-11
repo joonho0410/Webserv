@@ -122,6 +122,29 @@ void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
     _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
 }
 
+bool ServerEngine::_M_checkMethod(struct server_config_struct& serv, struct server_config_struct& loca, std::string method)
+{
+    std::vector<std::string> temp;
+
+    /* first check location block if not thne check serv block */
+    if (loca.valid != false && loca.key_and_value.find("deny") != loca.key_and_value.end()) {
+        temp = loca.key_and_value.find("deny")->second;
+        for (int i = 0; i < temp.size(); ++i) {
+            if (method.compare(temp[i]) == 0)
+                return false;
+        }
+    } else {
+        if (serv.key_and_value.find("deny") != serv.key_and_value.end()){
+            temp = serv.key_and_value.find("deny")->second;
+            for (int i = 0; i < temp.size(); ++i) {
+                if (method.compare(temp[i]) == 0)
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
 ServerEngine::ServerEngine()
 {
     std::cout << "Server engins created" << std::endl;
