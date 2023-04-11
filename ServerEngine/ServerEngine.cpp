@@ -21,17 +21,25 @@ void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, 
 struct server_config_struct
 ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
 {
+    std::cout << "_M_findServerPorts " << std::endl;
+    std::cout << "ports :" << _ports << std::endl;
+    std::cout << "server_name : " << _server_name << std::endl;
     std::vector<struct server_config_struct>::iterator begin = _m_server_config_set.begin();
     std::vector<struct server_config_struct>::iterator end = _m_server_config_set.end();
+    std::vector<std::string> temp;
+
+    if(_server_name == "localhost")
+        _server_name = "127.0.0.1";
 
     for(; begin != end; ++begin)
-    {
-        if ((*begin).key_and_value.find(_ports) != (*begin).key_and_value.end())
+    { 
+        if ((*begin).key_and_value.find("listen")->second.front() == _ports)
         {
-            if ((*begin).key_and_value.find(_server_name) != (*begin).key_and_value.end())
-            {
-                return (*begin);
-            }
+            temp = (*begin).key_and_value.find("server_name")->second;
+            for (int i = 0; i < temp.size(); ++ i){
+                if (temp[i] == _server_name)
+                    return (*begin);
+            } 
         }
     }
     /* return default server ... need change */
@@ -45,11 +53,11 @@ struct server_config_struct
 ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, std::string &url)
 {
     std::cout << "========== find location block =========== " << std::endl;
-    size_t pos = 0;
-    std::string str;
-    std::string temp;
     struct server_config_struct ret;
-    bool        valid = false;
+    std::string locationString;
+    std::string pathString;
+    size_t pos = 0;
+    bool valid = false;
 
     // if location block is empty return valid=false block; 
     if (server_block.location_block.empty()) {
@@ -58,22 +66,21 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
     }
     
     pos = url.find_first_of("/", 0);
-    temp = url.substr(pos + 1);
+    pathString = url.substr(pos + 1);
     while (pos != std::string::npos)
     {
-        // std::cout << "strated " << std::endl;
-        str = url.substr(0, pos + 1);
-        // std::cout << "pos : " << pos << std::endl;
-        // std::cout << "temp : " << temp << std::endl;
-        // std::cout << "str : " << str << std::endl;
-        if (server_block.location_block.find(str) == server_block.location_block.end())
+        locationString = url.substr(0, pos + 1);
+        std::cout << "pos : " << pos << std::endl;
+        std::cout << "pathString : " << pathString << std::endl;
+        std::cout << "locationString : " << locationString << std::endl;
+        if (server_block.location_block.find(locationString) == server_block.location_block.end())
             break ;
-        ret = server_block.location_block[str];
-        valid = true;
+        ret = server_block.location_block[locationString];
+        pathString = url.substr(pos + 1);
         pos = url.find_first_of("/", pos + 1);
+        valid = true;
         if (pos == std::string::npos)
             break;
-        temp = url.substr(pos + 1);        
     }
     // std::cout << "end " << std::endl;
     
@@ -83,7 +90,7 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
     }
     // std::cout << "temp : " << temp << std::endl;
     // std::cout << "url : " << url << std::endl;
-    url = temp;
+    url = pathString;
     return (ret);
 }
 
@@ -113,6 +120,29 @@ void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
 
     /* add event for client socket - add read event */
     _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
+}
+
+bool ServerEngine::_M_checkMethod(struct server_config_struct& serv, struct server_config_struct& loca, std::string method)
+{
+    std::vector<std::string> temp;
+
+    /* first check location block if not thne check serv block */
+    if (loca.valid != false && loca.key_and_value.find("deny") != loca.key_and_value.end()) {
+        temp = loca.key_and_value.find("deny")->second;
+        for (int i = 0; i < temp.size(); ++i) {
+            if (method.compare(temp[i]) == 0)
+                return false;
+        }
+    } else {
+        if (serv.key_and_value.find("deny") != serv.key_and_value.end()){
+            temp = serv.key_and_value.find("deny")->second;
+            for (int i = 0; i < temp.size(); ++i) {
+                if (method.compare(temp[i]) == 0)
+                    return false;
+            }
+        }
+    }
+    return true;
 }
 
 ServerEngine::ServerEngine()
@@ -151,7 +181,7 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
             std::string temp = std::string(buf);
             req.appendBuf(temp);
             req.parseBuf();
-            if (req.getState() == REQUEST_FINISH || req.getState() == REQUEST_FINISH)
+            if (req.getState() == REQUEST_FINISH || req.getState() == REQUEST_ERROR)
                 break;
             memset(buf, 0, sizeof(buf));
             if (n < 1023)
@@ -179,6 +209,7 @@ void ServerEngine::make_serversocket()
     optLinger.l_onoff = 1;
     optLinger.l_linger = 0;
     // 종료함수가 실행되면 안에있는 버퍼들은 모두 폐기하고 바로 종료시킨다.
+    // l_linger 가 0이 아니면 해당시간동안 대기하면서 버퍼에있는 내용들을 가지고있는다.
 
     std::cout << "Server socket creating... " << std::endl;
     for(; begin != end; ++begin)
@@ -246,6 +277,12 @@ void ServerEngine::start_kqueue()
                     std::cerr << "client socket error" << std::endl;
                     _M_disconnectClient(*curr_event, _m_clients);
                 }
+            }
+
+            /* catch cgi process is end */
+            else if (curr_event->filter == EVFILT_PROC && curr_event->fflags == NOTE_EXIT){
+                std::cout << "CGI PROCESS IS DONE" << std::endl;
+                waitCgiEnd(*curr_event);
             }
 
             /* EOF is coming disconnect client */

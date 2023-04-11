@@ -304,7 +304,6 @@ void ServerEngine::writeCgiBody(struct kevent& curr_event){
     if (write(curr_event.ident, str.c_str(), str.size()) == -1){
         ;// return server error 50x 
     }
-    lseek(curr_event.ident, 0, SEEK_SET);
     udata->setState(EXCUTE_CGI);
     _M_changeEvents(_m_change_list, fileno(udata->getoutFile()),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);   
 }

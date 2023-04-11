@@ -205,8 +205,11 @@ void ServerConfig::_M_parse_file()
             }
             // 블록 내용 파싱 및 값 저장.
             else if (!currentBlock_name.empty()) {
+                std::cout << "LINE :: " << line << std::endl;
                 if (line[line.size() - 1] != ';')
                 {
+                    std::cout << line.length() - 1 << std::endl;
+                    std::cout << line[line.length() - 1] << std::endl;
                     std::cout << "parsing error line does not closed with ;" << std::endl;
                     exit(1);
                 }
@@ -222,6 +225,7 @@ void ServerConfig::_M_parse_file()
             }
         }
         readfile.close(); // 파일 닫기
+        std::cout << "file is closed " << std::endl;
     }
     else // if file is not available return throw;
     {
@@ -303,87 +307,101 @@ void ServerConfig::_M_parse_KeyValuePairs(std::string const &_input)
 /* _M_check_ fucntion */
 ////////////////////////
 
-void ServerConfig::_M_check_ip(std::string str)
-{
-    size_t keyStart = 0;
-    size_t keyEnd;
-    std::string s;
-    std::vector<int> v;
-    int     num;
+// void ServerConfig::_M_check_ip(std::string str)
+// {
+//     size_t keyStart = 0;
+//     size_t keyEnd;
+//     std::string s;
+//     std::vector<int> v;
+//     int     num;
 
-    /* split with . */
-    keyEnd = str.find_first_of(".", 0);
-    while(keyEnd != std::string::npos)
-    {
-        s = str.substr(keyStart, keyEnd - keyStart);
-        if (!ft_is_digit(s))
-        {
-            std::cout << "ip address is not number" << std::endl;
-            exit(1);
-        }
-        num = atoi(s.c_str());
-        if (s.compare("0") != 0  && num == 0)
-        {
-            std::cout << "config file 'listen ip error' a" << std::endl;
-            exit(1);
-        }
-        v.push_back(num);
-        keyStart += (keyEnd - keyStart + 1);
-        keyEnd = str.find_first_of(".", keyStart);
-    }
+//     /* split with . */
+//     keyEnd = str.find_first_of(".", 0);
+//     while(keyEnd != std::string::npos)
+//     {
+//         s = str.substr(keyStart, keyEnd - keyStart);
+//         if (!ft_is_digit(s))
+//         {
+//             std::cout << "ip address is not number" << std::endl;
+//             exit(1);
+//         }
+//         num = atoi(s.c_str());
+//         if (s.compare("0") != 0  && num == 0)
+//         {
+//             std::cout << "config file 'listen ip error' a" << std::endl;
+//             exit(1);
+//         }
+//         v.push_back(num);
+//         keyStart += (keyEnd - keyStart + 1);
+//         keyEnd = str.find_first_of(".", keyStart);
+//     }
     
-    /* ip form is xxx.xxx.xxx.xxx */
+//     /* ip form is xxx.xxx.xxx.xxx */
 
-    if(v.size() != 4)
-    {
-        std::cout << "config file 'listen ip error' " << std::endl;
+//     if(v.size() != 4)
+//     {
+//         std::cout << "config file 'listen ip error' " << std::endl;
+//         exit(1);
+//     }
+
+//     /* 0 =< ip.address =< 255 */
+
+//     for (int i = 0 ; i < 4 ; ++i)
+//     {
+//         if (v[i] > 255 || v[i] < 0)
+//         {
+//             std::cout << "config file 'listen ip error' " << std::endl;
+//             exit(1);
+//         }
+//     }
+// }
+
+void ServerConfig::_M_check_serverName(std::vector<struct server_config_struct >::iterator _temp)
+{
+    std::cout << "_M_check_serverName" << std::endl;
+    std::map <std::string, std::vector<std::string> >::iterator search;
+    search = _temp->key_and_value.find("server_name");
+    
+    /* if listen is not exist set default */ 
+    if (search == _temp->key_and_value.end()) {
+        std::cout << "server name is not defined " << std::endl;
         exit(1);
-    }
-
-    /* 0 =< ip.address =< 255 */
-
-    for (int i = 0 ; i < 4 ; ++i)
-    {
-        if (v[i] > 255 || v[i] < 0)
-        {
-            std::cout << "config file 'listen ip error' " << std::endl;
-            exit(1);
-        }
+    } else if (search->second.size() == 0) {
+        std::cout << "server name is empty " << std::endl;
+        exit(1);
     }
 }
 
 void ServerConfig::_M_check_listen(std::vector<struct server_config_struct >::iterator _temp)
 {
+     std::cout << "_M_check_listen" << std::endl;
     std::map <std::string, std::vector<std::string> >::iterator search;
     search = _temp->key_and_value.find("listen");
     
     /* if listen is not exist set default */ 
     if (search == _temp->key_and_value.end())
-    {
-        _temp->key_and_value["listen"].push_back("0.0.0.0");
         _temp->key_and_value["listen"].push_back("80");
-    }
-    else if (search->second.size() == 1)
-    {
-        std::string str;
-        str = search->second[0];
-        if (str.find_first_of(":", 0) != std::string::npos)
-        {
-            std::string ip;
-            std::string port;
-            ip = str.substr(0, str.find_first_of(":",0));
-            _M_check_ip(ip);
-            if (str.size() - str.find_first_of(":", 0) == 1)
-                port = "80";
-            else
-                port = str.substr(str.find_first_of(":",0) + 1, str.size() - str.find_first_of(":",0));
-            _temp->key_and_value["listen"].push_back(ip);
-            _temp->key_and_value["listen"].push_back(port);
+    else if (search->second.size() == 1) {
+        std::string ports;
+        ports = search->second[0];
+        if(!ft_is_digit(ports)){
+            std::cout << "parsing 'listen' error";
         }
+        _temp->key_and_value["listen"].push_back(ports);
     }
-    else
-    {
-        std::cout << "parsing 'listen' error \n";
+    else if (search->second.size() == 2 && search->second[1] == "default_server") {
+        if (_temp->key_and_value.find("server_name") == _temp->key_and_value.end()) {
+            std::cout << "server_name error " << std::endl;
+            exit(1);
+        }
+        else if (_temp->key_and_value["server_name"].size() != 1 && _temp->key_and_value["server_name"].front() != "_") {
+            std::cout << "listen default server error" << std::endl;
+            exit(1);
+        }
+        /* need set this block as default server at temporary ports */
+    }
+    else {
+        std::cout << "parsing 'listen' error" << std::endl;
         exit(1);
     }
 }
@@ -395,12 +413,8 @@ void ServerConfig::_M_check_config()
 
     for (; begin != end; ++begin)
     {
+        std::cout << "_M_check_config" << std::endl;
+        _M_check_serverName(begin);
         _M_check_listen(begin);
-        _M_check_root(begin);
     }
-}
-
-void ServerConfig::_M_check_root(std::vector<struct server_config_struct>::iterator _temp)
-{
-    
 }

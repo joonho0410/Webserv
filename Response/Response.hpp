@@ -1,9 +1,12 @@
 #pragma once
 #include <iostream>
 
+#define BAD_REQUEST 413;
+
 enum Response_erorr{
     RESPONSE_OK
 };
+
 
 class Response
 {
