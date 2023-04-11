@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/11 16:24:32 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/11 19:05:59 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ void    CgiHandler::_M_initEnv(Request &request )
     _M_findAndInit("CONTENT_TYPE", "CONTENT-TYPE", header);
     this->_m_env["CONTENT_LENGTH"] = std::to_string(request.getBody().length()); 
     this->_m_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-    this->_m_env["PATH_INFO"] = request.getUrl(); //전체 경로를 사용함???
+    this->_m_env["PATH_INFO"] = request.getUrl();
     this->_m_env["PATH_TRANSLATED"] = request.getServerUrl();
     this->_m_env["QUERY_STRING"] = request.getQueryString();
     this->_m_env["REMOTE_ADDR"] = "";
@@ -91,9 +91,6 @@ char    **CgiHandler::_M_get_envArr() const {
 std::string CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
     std::string body = this->_m_request.getBody();
-    std::cout << "######### CGI BODY ########" << std::endl;
-    std::cout << body << std::endl;
-    std::cout << "###########################" << std::endl;
     const char  *script_name = this->_m_env.find("SCRIPT_NAME")->second.c_str();
     int         stdinBackup = dup(STDIN);
     int         stdoutBackup = dup(STDOUT);
