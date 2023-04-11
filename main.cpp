@@ -14,6 +14,7 @@ int main(int argc, char** argv)
     ServerConfig server_config;
     std::vector<struct server_config_struct> config_set;
     
+    /* config file parsing */
     if (argc == 1 || argc == 2)
     {
         if (argc == 2)

@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/11 18:03:00 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/11 16:24:32 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ CgiHandler::CgiHandler(Request &request,int infile, int outfile)
     : _m_request(request), _m_inFilefd(infile), _m_outFilefd(outfile)
 {
     _M_initEnv(this->_m_request);
+
 }
 
 inline void CgiHandler::_M_findAndInit(std::string env, std::string headerEnv, std::map< std::string, std::vector< std::string > > &header)
@@ -34,6 +35,8 @@ void    CgiHandler::_M_initEnv(Request &request )
     size_t      deli;
     
     hostHeader = *(header["HOST"].begin());
+    http://naver.com -> naver.com:80
+    htpps://naver.com -> naver.com:433
     deli = hostHeader.find_first_of(":");
     if (deli != std::string::npos){
         this->_m_env["SERVER_NAME"] = hostHeader.substr(0, deli);
@@ -85,7 +88,7 @@ char    **CgiHandler::_M_get_envArr() const {
 
 #include <unistd.h>
 
-int CgiHandler::executeCgi() {
+std::string CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
     std::string body = this->_m_request.getBody();
     std::cout << "######### CGI BODY ########" << std::endl;
@@ -111,7 +114,6 @@ int CgiHandler::executeCgi() {
         std::cout << "waiting cgi is done" << std::endl;
         lseek(_m_outFilefd, 0, SEEK_SET);
     }
-
     std::cout << "executed CGI is done !" << std::endl;
     int i = 0;
     while (env[i] != 0){
@@ -119,5 +121,5 @@ int CgiHandler::executeCgi() {
         ++i;
     }
     delete []env;
-    return (pid);
+    return (rv);
 }

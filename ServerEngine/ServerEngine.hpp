@@ -38,7 +38,6 @@ class ServerEngine
         void _M_disconnectClient(struct kevent& , std::map<int, std::string>& clients);
         void _M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
-        bool _M_checkMethod(struct server_config_struct &, struct server_config_struct&, std::string method );
 
         /* switch case */
         void _M_makeClientSocket(struct kevent*);
@@ -53,7 +52,6 @@ class ServerEngine
         void writeResponse(struct kevent& curr_event);
         void excuteCgi(struct kevent& curr_event);
         void writeCgiBody(struct kevent& curr_event);
-        void waitCgiEnd(struct kevent &curr_event);
 
     public :
         ServerEngine();

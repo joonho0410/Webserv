@@ -239,7 +239,7 @@ void Request::_M_parseBody()
             _m_errorCode = WRONG_PARSING;
             return ;
         }
-        
+
         num = atoi(contentLength.c_str());
         bodyLength = static_cast<size_t> (num);
         body = _m_buf.substr(0, bodyLength - myBodyLength);

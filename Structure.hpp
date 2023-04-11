@@ -20,7 +20,6 @@ struct KeyValue {
 enum kqueue_process
 {
     WAIT_CONNECT,
-    WAIT_CGI_END,
     READ_REQUEST,
     READ_DOCS,
     READ_CGI_RESULT,
