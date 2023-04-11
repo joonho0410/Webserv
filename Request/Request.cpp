@@ -203,7 +203,7 @@ void Request::_M_parseValueWithComma(std::string const &_line, std::string _key)
         valueStart = _line.find_first_not_of(" \t", valueStart);
         if (valueStart == std::string::npos)
             break ;
-        valueEnd = _line.find_first_of(" ,", valueStart);
+        valueEnd = _line.find_first_of(",", valueStart);
         if (valueEnd == std::string::npos)
             value = _line.substr(valueStart);
         else

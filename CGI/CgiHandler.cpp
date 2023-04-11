@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/07 18:03:20 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/11 16:24:32 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,7 +49,7 @@ void    CgiHandler::_M_initEnv(Request &request )
     _M_findAndInit("CONTENT_TYPE", "CONTENT-TYPE", header);
     this->_m_env["CONTENT_LENGTH"] = std::to_string(request.getBody().length()); 
     this->_m_env["GATEWAY_INTERFACE"] = "CGI/1.1";
-    this->_m_env["PATH_INFO"] = request.getUrl();
+    this->_m_env["PATH_INFO"] = request.getUrl(); //전체 경로를 사용함???
     this->_m_env["PATH_TRANSLATED"] = request.getServerUrl();
     this->_m_env["QUERY_STRING"] = request.getQueryString();
     this->_m_env["REMOTE_ADDR"] = "";
@@ -61,28 +61,7 @@ void    CgiHandler::_M_initEnv(Request &request )
     this->_m_env["SCRIPT_NAME"] = request.getServerUrl();
     this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
-
-    std::cout << "CGI GET URL : " << request.getUrl() << std::endl;
-    std::cout << "CGI GET ServerURL : " << request.getServerUrl() << std::endl;
-
-    // this->_m_env["AUTH_TYPE"] = "Basic"; //헤더
-    // this->_m_env["CONTENT_LENGTH"] = "100";
-    // this->_m_env["CONTENT_TYPE"] = "application/json"; //헤더
-    // this->_m_env["GATEWAY_INTERFACE"] = "CGI/1.1"; //우리꺼
-    // this->_m_env["PATH_INFO"] = "/test/cgi_tester"; // configure
-    // this->_m_env["PATH_TRANSLATED"] = "./cgi-bin/cgi_tester"; // configure
-    // this->_m_env["QUERY_STRING"] = "sortBy=name&limit=10";
-    // this->_m_env["REMOTE_ADDR"] = "127.0.0.1"; //??
-    // this->_m_env["REMOTE_HOST"] = "localhost"; //??
-    // this->_m_env["REMOTE_PORT"] = "8080"; //??
-    // this->_m_env["REMOTE_USER"] = "jaehyuki"; //어디서오는지 모름??
-    // this->_m_env["REQUEST_METHOD"] = "GET";
-    // this->_m_env["REQUEST_URI"] = "http://localhost:4242/test/cgi_tester?sortBy=name&limit=10";
-    // this->_m_env["SCRIPT_NAME"] = "./cgi-bin/cgi_tester"; // configure
-    // this->_m_env["SERVER_NAME"] = "localhost"; // 헤더 
-    // this->_m_env["SERVER_PORT"] = "4242"; // 헤더
-    // this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-    // this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
+    
     std::cout << "init Env is DONE " << std::endl;
 }
 
@@ -112,32 +91,27 @@ char    **CgiHandler::_M_get_envArr() const {
 std::string CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
     std::string body = this->_m_request.getBody();
+    std::cout << "######### CGI BODY ########" << std::endl;
+    std::cout << body << std::endl;
+    std::cout << "###########################" << std::endl;
     const char  *script_name = this->_m_env.find("SCRIPT_NAME")->second.c_str();
     int         stdinBackup = dup(STDIN);
     int         stdoutBackup = dup(STDOUT);
-    // FILE        *inFile = tmpfile();
-    // FILE        *outFile = tmpfile();
-    // int         inFd = fileno(inFile);
-    // int         outFd = fileno(outFile);
     int         pid;
     std::string rv;
     
-    // write(_m_inFilefd, body.c_str(), body.length());
     pid = fork();
     if (pid == 0)
     {
         dup2(_m_inFilefd, STDIN);
         dup2(_m_outFilefd, STDOUT);
         execve(script_name, NULL, env);
-        write(2, "\nEXECUTE ERROR!!\n", strlen("EXECUTE ERROR!!\n"));
+        std::cout << "EXECUTE CGI FAIL!" << std::endl;
     }
     else
     {
-        char    buf[BUF_SIZE] = {0};
-        int     len_read = 1;
-
-        std::cout << "waiting cgi is done" << std::endl;
         waitpid(-1, 0, 0);
+        std::cout << "waiting cgi is done" << std::endl;
         lseek(_m_outFilefd, 0, SEEK_SET);
     }
     std::cout << "executed CGI is done !" << std::endl;

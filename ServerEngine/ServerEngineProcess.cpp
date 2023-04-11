@@ -138,8 +138,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         /* 함수 나누면 좋을듯? */
         FILE    *outFile = tmpfile();
         FILE    *inFile = tmpfile();
-        int     infd = fileno(outFile);
-        int     outfd = fileno(inFile);
+        int     infd = fileno(inFile);
+        int     outfd = fileno(outFile);
 
         udata->setinFile(inFile);
         udata->setoutFile(outFile);
@@ -249,6 +249,9 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         ;//50x server error;
     buf[readsize] = '\0';
     std::string str = std::string(buf);
+    std::cout << "======= CGI OUTPUT =========" << std::endl;
+    std::cout << ">>: " << str << std::endl;
+    std::cout << "============================" << std::endl;
     udata->getResponse().apeendResponse(str);
 
     delete []buf;
@@ -301,6 +304,7 @@ void ServerEngine::writeCgiBody(struct kevent& curr_event){
     if (write(curr_event.ident, str.c_str(), str.size()) == -1){
         ;// return server error 50x 
     }
+    lseek(curr_event.ident, 0, SEEK_SET);
     udata->setState(EXCUTE_CGI);
     _M_changeEvents(_m_change_list, fileno(udata->getoutFile()),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);   
 }
