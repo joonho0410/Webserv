@@ -84,6 +84,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         req.setErrorCode(WRONG_PARSING);
         res.setErrorCode(req.getErrorCode());
         udata->setState(WRITE_RESPONSE);
+
         _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE , EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;
     } 
@@ -102,7 +103,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     /* default server 에 대한 생각이 필요하다  && location block 을 찾지못할 경우에 그냥 바로 검색 */
     serv = _M_findServerPort(ports, serverName);
     if (serv.valid == false){
-        std::cout << " can't find server block " << std::endl; // can't find server block return error 
+        std::cout << " can't find server block " << std::endl; // can't find server block return error
+        exit(1); // 404 error page; 
     } else {
         loca = _M_findLocationBlock(serv, url);
         if (loca.valid == false)
@@ -136,13 +138,14 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         /* check Body Size */
         // url 에는 현재 /cgi-bin/hello/asdf 가 들어왔을 때 location block 이 /cgi-bin/ 에 해당한다면
         // 나머지 hello/asdf 가 들어있는 상태이다... 이걸 path_info 로 넘겨야하는데 어떻게 넘길지 모르겠슴니다.
-        
-        if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
-            isBodyOk = req.checkBodySize(loca);
-        else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
-            isBodyOk = req.checkBodySize(serv);
-        if (isBodyOk == false)
-            ;/* 413 BAD REQUEST return */
+        if (req.getMethod().compare("POST") == 0) {
+            if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
+                isBodyOk = req.checkBodySize(loca);
+            else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
+                isBodyOk = req.checkBodySize(serv);
+            if (isBodyOk == false)
+                ;/* 413 BAD REQUEST return */
+        }
 
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
@@ -189,12 +192,14 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     } else { // cgi가 아닌 요청들 처리
         std::cout << "url is : " << url << std::endl;
         /* check_Body_size */
-        if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
-            isBodyOk = req.checkBodySize(loca);
-        else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
-            isBodyOk = req.checkBodySize(serv);
-        if (isBodyOk == false)
-            ;/* 413 BAD REQUEST return */
+        if(req.getMethod().compare("POST") == 0) {
+            if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
+                isBodyOk = req.checkBodySize(loca);
+            else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
+                isBodyOk = req.checkBodySize(serv);
+            if (isBodyOk == false)
+                ;/* 413 BAD REQUEST return */
+        }
 
         /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
@@ -205,6 +210,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
             serverUrl = *loca.key_and_value["root"].begin() + loca.block_name + *loca.key_and_value["index"].begin();
         }
+        
         std::cout << "server url is : " << serverUrl << std::endl;
         int fd = open(serverUrl.c_str(), O_RDONLY);
         if (fd != -1){
