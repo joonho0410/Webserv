@@ -33,8 +33,6 @@ void ServerEngine::readRequest(struct kevent& curr_event){
             break;
         case REQUEST_FINISH:
             std::cout << "REQUEST_FINISH then req.show_save()" << std::endl;
-            std::cout << "============== BODY =================" << std::endl;
-            std::cout << req.getBody() << std::endl;
             _M_executeRequest(curr_event, req);
             break;
         default:

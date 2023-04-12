@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include <unistd.h>
 
 Request::Request()
 {
@@ -71,7 +72,7 @@ void Request::parseBuf()
         if (_m_state == REQUEST_FINISH || _m_state == REQUEST_ERROR)
             break;
         findCRLF = _m_buf.find("\r\n");
-        if (findCRLF == std::string::npos)// && _m_state != READ_BODY)
+        if ((findCRLF == std::string::npos && _m_state != READ_BODY) || _m_buf.empty())
             break;
         switch (_m_state)
         {
@@ -86,6 +87,8 @@ void Request::parseBuf()
             case READ_BODY:
                 std::cout << "READ_BODY OCCURED" << std::endl;
                 _M_parseBody();
+                // std::cout << "========= READ BODY =========" << std::endl;
+                // std::cout << _m_body.size() << std::endl;
                 break;
             case READ_BODY_CHUNKED:
                 _M_parseBodyChunked(findCRLF);
@@ -250,6 +253,10 @@ void Request::_M_parseBody()
             _m_buf.clear();
             _m_state = REQUEST_FINISH;
         }
+        // std::cout << "need read len " << std::endl;
+        // std::cout << num << std::endl;
+        // std::cout << _m_body.size() << std::endl;
+        // std::cout << _m_buf.size() << std::endl;
     }
     catch (std::length_error &e)
     {

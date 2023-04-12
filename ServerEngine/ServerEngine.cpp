@@ -105,11 +105,22 @@ KqueueUdata* ServerEngine::_M_makeUdata(int state = 0)
 
 void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
     int client_socket;
+    struct linger      optLinger;
+    int                optVal;
+
+    optVal = 1;
+    optLinger.l_onoff = 1;
+    optLinger.l_linger = 10;
     
     if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
     std::cout << "accept new client: " << client_socket << std::endl;
+    if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
+        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
+        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     fcntl(client_socket, F_SETFL, O_NONBLOCK);
+    
 
     /* add event for client socket - add read event */
     _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
@@ -135,6 +146,7 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
 {
 
     char buf[1024];
+    int full_len = 0;
 
     while (1) {
         int n = read(_curr_event.ident, buf, sizeof(buf) - 1);
@@ -142,22 +154,27 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
             if (n < 0){
                 std::cerr << "client read error!" << std::endl;
                 std::cerr << "read out\n";
-                _M_disconnectClient(_curr_event, _m_clients);
+                break;
+                //_M_disconnectClient(_curr_event, _m_clients);
             }
+            std::cout << "read all ! " << std::endl;
             break ;
         }
         else {            
-            buf[n] = '\0';
-            std::string temp = std::string(buf);
+            // buf[n] = '\0';
+            std::string temp = std::string(buf, n);
             req.appendBuf(temp);
             req.parseBuf();
-            if (req.getState() == REQUEST_FINISH || req.getState() == REQUEST_FINISH)
+            if (req.getState() == REQUEST_FINISH || req.getState() == REQUEST_ERROR)
                 break;
             memset(buf, 0, sizeof(buf));
-            if (n < 1023)
-                break;
         }
+        if (n < 1023)
+            break;
     }
+    // std::cout << "========= len ==========" << std::endl;
+    // std::cout << full_len << std::endl;
+    // std::cout << req.getBuf().size() << std::endl;
 }
 
 /* make server socket using configFile */
