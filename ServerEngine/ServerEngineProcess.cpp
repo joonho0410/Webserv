@@ -162,7 +162,30 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             serverUrl = req.getUrl();
         if (url == ""){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
-            serverUrl = *loca.key_and_value["root"].begin() + *loca.key_and_value["index"].begin();
+            bool checkIndex = false;
+            std::string prefix;
+
+            if (loca.key_and_value.find("alias") != loca.key_and_value.end())
+                prefix = *loca.key_and_value["alias"].begin();
+            else if (loca.key_and_value.find("root") != loca.key_and_value.end())
+                prefix = (*loca.key_and_value["root"].begin());
+
+            if (*loca.key_and_value.find("index") != *loca.key_and_value.end()){
+                std::vector<std::string> temp = loca.key_and_value.find("index")->second;
+                for (int i = 0; i < temp.size(); ++i) {
+                    serverUrl = prefix + *loca.key_and_value["index"].begin();
+                    std::ifstream fileStream(serverUrl.c_str());
+                    if (fileStream.good()) {
+                        std::cout << "File exists." << std::endl;
+                        break;
+                    } else {
+                        std::cout << "File does not exist." << std::endl;
+                    }
+                }
+            }
+            if (checkIndex == false){
+                std::cout << "index is not available" << std::endl;        
+            }
         }        
         req.setServerUrl(serverUrl);
 

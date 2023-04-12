@@ -8,6 +8,8 @@
 #include "./ServerConfig/ServerConfig.hpp"
 #include "./ServerEngine/ServerEngine.hpp"
 
+/* this webserver is maded by 100% recycled code, so echo friendly !!! */
+
 int main(int argc, char** argv)
 {
     ServerEngine server_engine;
