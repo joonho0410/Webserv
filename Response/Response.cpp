@@ -33,7 +33,8 @@ std::map<std::string, std::string> Response::getHeader(){ return _m_header;}
 
 std::string Response::getResponse(){
     std::string response;
-
+    
+    setResponseByErrorCode(400);
     response.append(_m_statusLine + "\n");
     for (std::map<std::string, std::string>::const_iterator it = this->_m_header.begin(); it != this->_m_header.end(); it++){
         std::string str = it->first + ": " + it->second;
@@ -82,4 +83,20 @@ void Response::_M_initStatusCodeMap(void) {
 	_m_statusCodeMap[405] = "Method Not Allowed";
 	_m_statusCodeMap[413] = "Payload Too Large";
 	_m_statusCodeMap[500] = "Internal Server Error";
+}
+
+// Content-Type: 반환된 콘텐츠의 유형을 나타냅니다. 예를 들어, "text/html" 또는 "application/json"과 같은 값이 될 수 있습니다.
+// Content-Length: 반환된 콘텐츠의 길이를 나타냅니다.
+// Date: 서버에서 응답을 반환한 날짜와 시간을 나타냅니다.
+// Server: 서버 소프트웨어의 이름과 버전을 나타냅니다.
+
+void    Response::setResponseByErrorCode(int errorCode) {
+    // _m_header = 
+    // // _m_response = 
+    this->addBasicHeader();
+    this->_m_response.append("Content-Type: text/html\n");
+    this->_m_response.append(_m_header["Content-Length"]);
+    this->_m_response.append(_m_header["Date"]);
+    this->_m_response.append(_m_header["Server"]);
+    _m_errorCode = errorCode;
 }

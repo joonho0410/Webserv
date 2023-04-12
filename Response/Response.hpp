@@ -16,6 +16,7 @@ class Response
         std::string _m_response;
 
         void _M_initStatusCodeMap(void);
+        void setResponseByErrorCode(int errorCode);
     public :
         Response();
         ~Response();
