@@ -5,6 +5,19 @@
 #include "../ParsingUtility.hpp"
 #include "Structure.hpp"
 
+#define OK              200
+#define WRONG_PARSING   400
+#define WRONG_BODY      400
+#define OVER_LENGTH     500
+
+//enum Requset_error
+//{
+//    OK,
+//    OVER_LENGTH,
+//    WRONG_PARSING, // 400 BAD REQUEST
+//    WRONG_BODY
+//};
+
 enum Request_state
 {
     READ_START_LINE,
@@ -13,14 +26,6 @@ enum Request_state
     READ_BODY_CHUNKED,
     REQUEST_ERROR,
     REQUEST_FINISH
-};
-
-enum Requset_error
-{
-    OK,
-    OVER_LENGTH,
-    WRONG_PARSING, // 400 BAD REQUEST
-    WRONG_BODY
 };
 
 class Request

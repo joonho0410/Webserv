@@ -216,7 +216,7 @@ void ServerEngine::readDocs(struct kevent& curr_event){
 
         buffer[bytesRead] = '\0';
         data = std::string(buffer);
-        res.apeendResponse(data);
+        res.appendResponse(data);
         totalBytesRead += bytesRead; // 읽은 바이트 수 누적
     }
 
@@ -249,10 +249,7 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         ;//50x server error;
     buf[readsize] = '\0';
     std::string str = std::string(buf);
-    std::cout << "======= CGI OUTPUT =========" << std::endl;
-    std::cout << ">>: " << str << std::endl;
-    std::cout << "============================" << std::endl;
-    udata->getResponse().apeendResponse(str);
+    udata->getResponse().appendResponse(str);
 
     delete []buf;
     /* 파일의 역할을 모두 했으니 여기서 close 해줘야할까? */
@@ -270,7 +267,7 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     Response &res = udata->getResponse();
     Request &req = udata->getRequest();
-    std::string& responseString = res.getResponse();
+    std::string responseString = res.getResponse();
     const char* ret = responseString.c_str();
     int len = responseString.length();
     int bytes_written = write(curr_event.ident, ret, len);
