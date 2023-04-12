@@ -71,7 +71,7 @@ void Request::parseBuf()
         if (_m_state == REQUEST_FINISH || _m_state == REQUEST_ERROR)
             break;
         findCRLF = _m_buf.find("\r\n");
-        if (findCRLF == std::string::npos)
+        if (findCRLF == std::string::npos)// && _m_state != READ_BODY)
             break;
         switch (_m_state)
         {
@@ -230,6 +230,7 @@ void Request::_M_parseBody()
         std::string contentLength;
         std::string body;
         size_t      bodyLength;
+        size_t      myBodyLength = _m_body.length();
         int         num;
 
         contentLength = *(_m_header["CONTENT-LENGTH"].begin());
@@ -238,14 +239,17 @@ void Request::_M_parseBody()
             _m_errorCode = WRONG_PARSING;
             return ;
         }
-        
+
         num = atoi(contentLength.c_str());
         bodyLength = static_cast<size_t> (num);
-        body = _m_buf.substr(0, bodyLength);
+        body = _m_buf.substr(0, bodyLength - myBodyLength);
         _m_body.append(body);
-        _m_buf.clear();
-
-        _m_state = REQUEST_FINISH;
+        if (_m_body.size() < bodyLength)
+            _m_buf = _m_buf.substr(body.size());
+        else{
+            _m_buf.clear();
+            _m_state = REQUEST_FINISH;
+        }
     }
     catch (std::length_error &e)
     {

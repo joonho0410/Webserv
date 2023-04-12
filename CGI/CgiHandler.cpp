@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/04 17:26:06 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/11 19:05:59 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,6 +16,7 @@ CgiHandler::CgiHandler(Request &request,int infile, int outfile)
     : _m_request(request), _m_inFilefd(infile), _m_outFilefd(outfile)
 {
     _M_initEnv(this->_m_request);
+
 }
 
 inline void CgiHandler::_M_findAndInit(std::string env, std::string headerEnv, std::map< std::string, std::vector< std::string > > &header)
@@ -34,6 +35,8 @@ void    CgiHandler::_M_initEnv(Request &request )
     size_t      deli;
     
     hostHeader = *(header["HOST"].begin());
+    http://naver.com -> naver.com:80
+    htpps://naver.com -> naver.com:433
     deli = hostHeader.find_first_of(":");
     if (deli != std::string::npos){
         this->_m_env["SERVER_NAME"] = hostHeader.substr(0, deli);
@@ -44,7 +47,6 @@ void    CgiHandler::_M_initEnv(Request &request )
     }
     _M_findAndInit("AUTH_TYPE", "AUTHORIZATION", header);
     _M_findAndInit("CONTENT_TYPE", "CONTENT-TYPE", header);
-
     this->_m_env["CONTENT_LENGTH"] = std::to_string(request.getBody().length()); 
     this->_m_env["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->_m_env["PATH_INFO"] = request.getUrl();
@@ -56,31 +58,10 @@ void    CgiHandler::_M_initEnv(Request &request )
     this->_m_env["REMOTE_USER"] = "";
     this->_m_env["REQUEST_METHOD"] = request.getMethod();
     this->_m_env["REQUEST_URI"] = request.getUrl();
-    this->_m_env["SCRIPT_NAME"] = "./cgi-bin/test_sleep.sh";
+    this->_m_env["SCRIPT_NAME"] = request.getServerUrl();
     this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
-
-    std::cout << "CGI GET URL : " << request.getUrl() << std::endl;
-    std::cout << "CGI GET ServerURL : " << request.getServerUrl() << std::endl;
-
-    // this->_m_env["AUTH_TYPE"] = "Basic"; //헤더
-    // this->_m_env["CONTENT_LENGTH"] = "100";
-    // this->_m_env["CONTENT_TYPE"] = "application/json"; //헤더
-    // this->_m_env["GATEWAY_INTERFACE"] = "CGI/1.1"; //우리꺼
-    // this->_m_env["PATH_INFO"] = "/test/cgi_tester"; // configure
-    // this->_m_env["PATH_TRANSLATED"] = "./cgi-bin/cgi_tester"; // configure
-    // this->_m_env["QUERY_STRING"] = "sortBy=name&limit=10";
-    // this->_m_env["REMOTE_ADDR"] = "127.0.0.1"; //??
-    // this->_m_env["REMOTE_HOST"] = "localhost"; //??
-    // this->_m_env["REMOTE_PORT"] = "8080"; //??
-    // this->_m_env["REMOTE_USER"] = "jaehyuki"; //어디서오는지 모름??
-    // this->_m_env["REQUEST_METHOD"] = "GET";
-    // this->_m_env["REQUEST_URI"] = "http://localhost:4242/test/cgi_tester?sortBy=name&limit=10";
-    // this->_m_env["SCRIPT_NAME"] = "./cgi-bin/cgi_tester"; // configure
-    // this->_m_env["SERVER_NAME"] = "localhost"; // 헤더 
-    // this->_m_env["SERVER_PORT"] = "4242"; // 헤더
-    // this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
-    // this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
+    
     std::cout << "init Env is DONE " << std::endl;
 }
 
@@ -107,7 +88,7 @@ char    **CgiHandler::_M_get_envArr() const {
 
 #include <unistd.h>
 
-int CgiHandler::executeCgi() {
+std::string CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
     std::string body = this->_m_request.getBody();
     const char  *script_name = this->_m_env.find("SCRIPT_NAME")->second.c_str();
@@ -122,16 +103,14 @@ int CgiHandler::executeCgi() {
         dup2(_m_inFilefd, STDIN);
         dup2(_m_outFilefd, STDOUT);
         execve(script_name, NULL, env);
-        write(2, "\nEXECUTE ERROR!!\n", strlen("EXECUTE ERROR!!\n"));
+        std::cout << "EXECUTE CGI FAIL!" << std::endl;
     }
     else
     {
-        char    buf[BUF_SIZE] = {0};
-        int     len_read = 1;
-
+        waitpid(-1, 0, 0);
         std::cout << "waiting cgi is done" << std::endl;
+        lseek(_m_outFilefd, 0, SEEK_SET);
     }
-
     std::cout << "executed CGI is done !" << std::endl;
     int i = 0;
     while (env[i] != 0){
@@ -139,5 +118,5 @@ int CgiHandler::executeCgi() {
         ++i;
     }
     delete []env;
-    return (pid);
+    return (rv);
 }

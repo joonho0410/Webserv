@@ -1,22 +1,5 @@
 #include "ServerEngine.hpp"
 
-void ServerEngine::waitCgiEnd(struct kevent &curr_event){
-    KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
-    int status;
-
-    waitpid(curr_event.ident, &status, 0);//프로세스 회수
-    if (WIFEXITED(status)){
-        if(WEXITSTATUS(status) != 0 )
-            std::cout << "process not ended with 0 " << std::endl;// 비 정상 종료 이므로 50x error
-    } else {
-        std::cout << "process ennded with some signal" << std::endl;// 마찬가지로 비정상 종료이므로 50x error
-    }
-
-    lseek(fileno(udata->getoutFile()), 0, SEEK_SET);
-    udata->setState(READ_CGI_RESULT);
-    _M_changeEvents(_m_change_list, fileno(udata->getoutFile()), EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
-}
-
 void ServerEngine::waitConnect(struct kevent &curr_event){
     int client_socket;
     
@@ -50,8 +33,8 @@ void ServerEngine::readRequest(struct kevent& curr_event){
             break;
         case REQUEST_FINISH:
             std::cout << "REQUEST_FINISH then req.show_save()" << std::endl;
-            std::cout << "============= BODY =============" << std::endl;
-            write(1, udata->getRequest().getBody().c_str(), udata->getRequest().getBody().length());
+            std::cout << "============== BODY =================" << std::endl;
+            std::cout << req.getBody() << std::endl;
             _M_executeRequest(curr_event, req);
             break;
         default:
@@ -84,7 +67,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         req.setErrorCode(WRONG_PARSING);
         res.setErrorCode(req.getErrorCode());
         udata->setState(WRITE_RESPONSE);
-
         _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE , EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;
     } 
@@ -93,7 +75,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     /* 위의 코드는 임시로만든 Host 가 존재하는지 확인하는 코드 */
     if (host.find(":") == std::string::npos){
         serverName = host;
-        ports = "80";
     } else {
         serverName = host.substr(0, host.find_first_of(":"));
         ports = host.substr(host.find_first_of(":") + 1 );
@@ -103,27 +84,26 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     /* default server 에 대한 생각이 필요하다  && location block 을 찾지못할 경우에 그냥 바로 검색 */
     serv = _M_findServerPort(ports, serverName);
     if (serv.valid == false){
-        std::cout << " can't find server block " << std::endl; // can't find server block return error
-        exit(1); // 404 error page; 
-    } else {
-        loca = _M_findLocationBlock(serv, url);
-        if (loca.valid == false)
-            loca = serv; // location block 을 찾을 수 없기에 serv 블록에 환경대로 실행한다.
+        ;// can't find server block return error 
     }
-
+    loca = _M_findLocationBlock(serv, url);
+    if (loca.valid == false){
+        loca = serv; // location block 을 찾을 수 없기에 serv 블록에 환경대로 실행한다.
+    }
+    
     /* check is CGI */
     if (serv.key_and_value.find("cgi") != serv.key_and_value.end()){
         std::vector<std::string> cgi_value = serv.key_and_value.find("cgi")->second;
-        std::string str;
+        std::string temp;
 
         if (loca.block_name == cgi_value.back())
             isCgi = true;
         else {
-            str = req.getUrl();
+            temp = req.getUrl();
             for (int i = 0; i < cgi_value.size() - 1 ; ++ i){ 
-                if (str.length() < cgi_value[i].length())
+                if (temp.length() < cgi_value[i].length())
                     ;
-                else if (str.substr(str.length() - cgi_value[i].length()) == cgi_value[i]) {
+                else if (temp.substr(temp.length() - cgi_value[i].length()) == cgi_value[i]) {
                     std::string temp = cgi_value.back();
                     loca = _M_findLocationBlock(serv, temp);
                     isCgi = true;
@@ -135,32 +115,19 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
 
     /* START CGI_PROCESS */
     if (isCgi == true) {
-        /* check Body Size */
-        // url 에는 현재 /cgi-bin/hello/asdf 가 들어왔을 때 location block 이 /cgi-bin/ 에 해당한다면
-        // 나머지 hello/asdf 가 들어있는 상태이다... 이걸 path_info 로 넘겨야하는데 어떻게 넘길지 모르겠슴니다.
-
-         /* check metohd is allowed */ 
-        if (!_M_checkMethod(serv, loca, req.getMethod())){
-            std::cout << "not allowed method" << std::endl;//not allowed method;
-            exit(1);// replace need 405 error;
-        }
-
-        if (req.getMethod().compare("POST") == 0) {
-            if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
-                isBodyOk = req.checkBodySize(loca);
-            else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
-                isBodyOk = req.checkBodySize(serv);
-            if (isBodyOk == false)
-                ;/* 413 BAD REQUEST return */
-        }
+        /* check Body Size */ 
+        if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
+            isBodyOk = req.checkBodySize(loca);
+        else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
+            isBodyOk = req.checkBodySize(serv);
+        if (isBodyOk == false)
+            ;/* 413 BAD REQUEST return */
 
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
         else if (loca.key_and_value.find("root") != loca.key_and_value.end())
             serverUrl = (*loca.key_and_value["root"].begin()) + loca.block_name + url;
-        else
-            serverUrl = req.getUrl();
-        if (url == ""){
+        else if (url == ""){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
             bool checkIndex = false;
             std::string prefix;
@@ -200,56 +167,44 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         udata->setRequestedFd(curr_event.ident);
 
         /* body의 존재 유무에 따라서 body를 넣어주고 실행할지 바로 실행할지 결정한다 */
-        if (req.getBody().size() != 0 && req.getMethod().compare("POST") == 0) {
-            udata->setState(WRITE_CGI_BODY);
-            _M_changeEvents(_m_change_list, infd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
-        }
-        else {
+        if (req.getBody().size() == 0) {
             udata->setState(EXCUTE_CGI);
             _M_changeEvents(_m_change_list, outfd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         }
+        else {
+            udata->setState(WRITE_CGI_BODY);
+            _M_changeEvents(_m_change_list, infd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        }
        
-        
-        //test form 
+        /*
+        test form 
         std::cout << "==================" << std::endl;
         std::cout << "CGI EVENT IS ADDED" << std::endl;
         std::cout << "원본 url = " << req.getUrl() << std::endl;
         std::cout << "url = " << url << std::endl;
         std::cout << "serverUrl = " << serverUrl << std::endl;
-        
+        */
         return ;
 
     } else { // cgi가 아닌 요청들 처리
         std::cout << "url is : " << url << std::endl;
-
-        /* check metohd is allowed */
-        if (!_M_checkMethod(serv, loca, req.getMethod())){
-            std::cout << "not allowed method" << std::endl;//not allowed method;
-            exit(1);// replace need 405 error;
-        }
-
         /* check_Body_size */
-        if(req.getMethod().compare("POST") == 0) {
-            if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
-                isBodyOk = req.checkBodySize(loca);
-            else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
-                isBodyOk = req.checkBodySize(serv);
-            if (isBodyOk == false)
-                ;/* 413 BAD REQUEST return */
-        }
+        if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
+            isBodyOk = req.checkBodySize(loca);
+        else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
+            isBodyOk = req.checkBodySize(serv);
+        if (isBodyOk == false)
+            ;/* 413 BAD REQUEST return */
 
         /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
-        else if (loca.key_and_value.find("root") != loca.key_and_value.end())
+        if (loca.key_and_value.find("root") != loca.key_and_value.end())
             serverUrl = (*loca.key_and_value["root"].begin()) + loca.block_name + url;
-        else
-            serverUrl = req.getUrl();
         if (url == ""){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
             serverUrl = *loca.key_and_value["root"].begin() + loca.block_name + *loca.key_and_value["index"].begin();
         }
-        
         std::cout << "server url is : " << serverUrl << std::endl;
         int fd = open(serverUrl.c_str(), O_RDONLY);
         if (fd != -1){
@@ -302,7 +257,7 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     char *buf;
 
-    int outFilefd = curr_event.ident;
+    int outFilefd = fileno(udata->getoutFile());
     int size = lseek(outFilefd, 0, SEEK_END);
     if (size == -1)
         ;//50x server error
@@ -315,10 +270,15 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         ;//50x server error;
     buf[readsize] = '\0';
     std::string str = std::string(buf);
+    std::cout << "======= CGI OUTPUT =========" << std::endl;
+    std::cout << ">>: " << str << std::endl;
+    std::cout << "============================" << std::endl;
     udata->getResponse().apeendResponse(str);
 
     delete []buf;
     /* 파일의 역할을 모두 했으니 여기서 close 해줘야할까? */
+    //close(fileno(udata->getinFile()));
+    //close(fileno(udata->getoutFile()));
     fclose(udata->getinFile());
     fclose(udata->getoutFile());
     udata->setState(WRITE_RESPONSE);
@@ -335,7 +295,7 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     const char* ret = responseString.c_str();
     int len = responseString.length();
     int bytes_written = write(curr_event.ident, ret, len);
-    
+
     if (bytes_written < 0){
         std::cout << "WRITE ERROR" << std::endl;
     }
@@ -350,11 +310,10 @@ void ServerEngine::excuteCgi(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     Request&   req = udata->getRequest();
     CgiHandler cgiHandler(req, fileno(udata->getinFile()), fileno(udata->getoutFile()));
-    int pid;
 
-    pid = cgiHandler.executeCgi();
-    udata->setState(WAIT_CGI_END);
-    _M_changeEvents(_m_change_list, pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, udata);
+    cgiHandler.executeCgi();
+    udata->setState(READ_CGI_RESULT);
+    _M_changeEvents(_m_change_list, fileno(udata->getoutFile()), EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
     std::cout << "EXCUTE CGI IS DONE " << std::endl;
 }
 
@@ -366,6 +325,7 @@ void ServerEngine::writeCgiBody(struct kevent& curr_event){
     if (write(curr_event.ident, str.c_str(), str.size()) == -1){
         ;// return server error 50x 
     }
+    lseek(curr_event.ident, 0, SEEK_SET);
     udata->setState(EXCUTE_CGI);
     _M_changeEvents(_m_change_list, fileno(udata->getoutFile()),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);   
 }
