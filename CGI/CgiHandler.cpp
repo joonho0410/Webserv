@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/11 19:05:59 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/12 17:26:38 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,8 +85,6 @@ char    **CgiHandler::_M_get_envArr() const {
     }
     return (env);
 }
-
-#include <unistd.h>
 
 std::string CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
