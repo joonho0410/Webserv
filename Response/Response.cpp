@@ -62,13 +62,30 @@ void Response::addHeader(std::string headerName, std::string content) {
 }
 
 void Response::addBasicHeader() {
-    time_t now = time(0);  // 현재 시간 가져오기
-    char* dt = ctime(&now);  // 문자열로 변환하기
+    time_t now = time(0);
+    char* dt = ctime(&now);
 
     _m_header["Server"] = "webserv/1.0";
     _m_header["Date"] = std::string(dt);
     _m_header["Content-Length"] = _m_response.length();
     //Content-Type은 리소스 불러올때 적어줘야함
+}
+
+void Response::setResponseByCgiResult(std::string cgiResult) {
+    std::string delimiter = "\r\n";
+    std::string header;
+    std::string body;
+    size_t pos = cgiResult.find(delimiter);
+
+    if (pos != std::string::npos) {
+        // delimiter found
+        header = cgiResult.substr(0, pos);
+        body = cgiResult.substr(pos + delimiter.length() + 1 , cgiResult.length());
+    } else {
+        // delimiter not found
+    }
+    _M_parseAndSetHeader(header); //set _m_header
+    _m_response = body;
 }
 
 void Response::_M_initStatusCodeMap(void) {
@@ -82,4 +99,40 @@ void Response::_M_initStatusCodeMap(void) {
 	_m_statusCodeMap[405] = "Method Not Allowed";
 	_m_statusCodeMap[413] = "Payload Too Large";
 	_m_statusCodeMap[500] = "Internal Server Error";
+}
+
+void Response::_M_parseAndSetHeader(std::string header) {
+    bool    valid = true;
+
+    std::vector<std::string> lines;
+    std::string line;
+    std::istringstream lineStream(header);
+    while (std::getline(lineStream, line, '\n')) {
+        lines.push_back(line);
+    }
+    _m_statusLine = *lines.begin();
+    std::map<std::string, std::string> headerMap;
+    for (std::vector<std::string>::const_iterator it = std::next(lines.begin()); it != lines.end(); it++){
+        size_t pos = it->find(":");
+        std::string headerName;
+        std::string content;
+        if (pos != std::string::npos) {
+            headerName = (*it).substr(0, pos);
+            content = (*it).substr(pos + 1, (*it).length());
+            headerMap[headerName] = content;
+        } else {
+            valid = false;
+        }
+    }
+    if (headerMap.find("Content-Type") != headerMap.end())
+        valid = false;
+    
+    if (valid == false)
+        setResponseByErrorCode(500); // ERROR CODE DEFINE??
+    else
+        _m_header = headerMap;
+}
+
+void    Response::setResponseByErrorCode(int errorCode) {
+    std::cout << "CGI HEADER RETURN IS WRONG!!!!!!" << std::endl;
 }

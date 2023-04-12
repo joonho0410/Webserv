@@ -1,6 +1,8 @@
 #pragma once
 #include <iostream>
+#include <sstream>
 #include <map>
+#include <vector>
 
 enum Response_erorr{
     RESPONSE_OK
@@ -16,6 +18,7 @@ class Response
         std::string _m_response;
 
         void _M_initStatusCodeMap(void);
+        void _M_parseAndSetHeader(std::string header);
     public :
         Response();
         ~Response();
@@ -33,4 +36,6 @@ class Response
         void appendResponse(std::string &);
         void addHeader(std::string headerName, std::string content);
         void addBasicHeader(); //Server, Date, Content-Length
+        void setResponseByCgiResult(std::string cgiResult);
+        void setResponseByErrorCode(int errorCode);
 };

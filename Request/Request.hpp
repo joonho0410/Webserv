@@ -10,14 +10,6 @@
 #define WRONG_BODY      400
 #define OVER_LENGTH     500
 
-//enum Requset_error
-//{
-//    OK,
-//    OVER_LENGTH,
-//    WRONG_PARSING, // 400 BAD REQUEST
-//    WRONG_BODY
-//};
-
 enum Request_state
 {
     READ_START_LINE,
