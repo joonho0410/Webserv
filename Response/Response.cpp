@@ -13,7 +13,11 @@ Response::~Response(){
 
 /* Setter */
 
-void Response::setErrorCode(int errorCode){ _m_errorCode = errorCode;}
+void Response::setErrorCode(int errorCode){
+    _m_errorCode = errorCode;
+    setStatusLine(errorCode);
+}
+
 void Response::setStatusLine(int errorCode){
     _m_statusLine = "HTTP/1.1 ";
     _m_statusLine.append(std::to_string(errorCode));
@@ -38,8 +42,7 @@ std::string Response::getResponse(){
     for (std::map<std::string, std::string>::const_iterator it = this->_m_header.begin(); it != this->_m_header.end(); it++){
         std::string str = it->first + ": " + it->second;
         response.append(str);
-        if (std::next(it) != _m_header.end())
-            response.append("\n");
+        response.append("\n");
     }
     response.append("\r\n");
     response.append(_m_response);
@@ -65,9 +68,11 @@ void Response::addBasicHeader() {
     time_t now = time(0);
     char* dt = ctime(&now);
 
+    dt[std::strlen(dt) - 1] = '\0';
+    setStatusLine(_m_errorCode);
     _m_header["Server"] = "webserv/1.0";
     _m_header["Date"] = std::string(dt);
-    _m_header["Content-Length"] = _m_response.length();
+    _m_header["Content-Length"] = std::to_string(_m_response.length() -1);
     //Content-Type은 리소스 불러올때 적어줘야함
 }
 
