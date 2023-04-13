@@ -104,7 +104,7 @@ void Request::_M_parseStartLine(size_t n)
 {
     size_t  keyStart = 0;
     size_t  keyEnd = 0;
-    size_t  pos;
+    size_t  pos = 0;
     size_t  questionMarkCount = 0;
 
     std::string key;
@@ -126,12 +126,14 @@ void Request::_M_parseStartLine(size_t n)
 
     keyEnd = line.find_first_of(" ", keyStart);
     key = line.substr(keyStart, keyEnd - keyStart);
+    // std::cout << "KEY = " << key << std::endl;
     while ((pos = key.find("?", pos)) != std::string::npos){
         ++questionMarkCount;
         if (questionMarkCount > 1)
             break ;
         ++pos;
     }
+
     if (questionMarkCount > 1){
          _m_state = REQUEST_ERROR;   
         _m_errorCode = WRONG_PARSING;

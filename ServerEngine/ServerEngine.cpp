@@ -18,27 +18,55 @@ void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, 
         delete reinterpret_cast<KqueueUdata*> (curr_event.udata);
 }
 
+bool ServerEngine::_M_checkMethod(struct server_config_struct& serv, struct server_config_struct& loca, std::string method)
+{
+    std::vector<std::string> temp;
+
+    /* first check location block if not thne check serv block */
+    if (loca.valid != false && loca.key_and_value.find("deny") != loca.key_and_value.end()) {
+        temp = loca.key_and_value.find("deny")->second;
+        for (int i = 0; i < temp.size(); ++i) {
+            if (method.compare(temp[i]) == 0)
+                return false;
+        }
+    } else {
+        if (serv.key_and_value.find("deny") != serv.key_and_value.end()){
+            temp = serv.key_and_value.find("deny")->second;
+            for (int i = 0; i < temp.size(); ++i) {
+                if (method.compare(temp[i]) == 0)
+                    return false;
+            }
+        }
+    }
+    return true;
+}
+
 struct server_config_struct
 ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
 {
     std::vector<struct server_config_struct>::iterator begin = _m_server_config_set.begin();
     std::vector<struct server_config_struct>::iterator end = _m_server_config_set.end();
+    std::vector<std::string> temp;
+
+    if(_server_name == "localhost")
+        _server_name = "127.0.0.1";
 
     for(; begin != end; ++begin)
-    {
-        if ((*begin).key_and_value.find(_ports) != (*begin).key_and_value.end())
+    { 
+        if ((*begin).key_and_value.find("listen")->second.front() == _ports)
         {
-            if ((*begin).key_and_value.find(_server_name) != (*begin).key_and_value.end())
-            {
-                return (*begin);
-            }
+            temp = (*begin).key_and_value.find("server_name")->second;
+            for (int i = 0; i < temp.size(); ++ i){
+                if (temp[i] == _server_name)
+                    return (*begin);
+            } 
         }
     }
     /* return default server ... need change */
     // if default serverblock is defined return default block 
     // else return valid false
-    _m_server_config_set.begin()->valid = false;
-    return (*(_m_server_config_set.begin()));
+    struct server_config_struct ret = {false};
+    return ret;
 }
 
 struct server_config_struct
@@ -110,7 +138,7 @@ void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
 
     optVal = 1;
     optLinger.l_onoff = 1;
-    optLinger.l_linger = 10;
+    optLinger.l_linger = 0;
     
     if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
@@ -154,8 +182,7 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
             if (n < 0){
                 std::cerr << "client read error!" << std::endl;
                 std::cerr << "read out\n";
-                break;
-                //_M_disconnectClient(_curr_event, _m_clients);
+                _M_disconnectClient(_curr_event, _m_clients);
             }
             std::cout << "read all ! " << std::endl;
             break ;
@@ -253,8 +280,15 @@ void ServerEngine::start_kqueue()
         {
             curr_event = &_m_event_list[i];
 
+            // 순서에 따라 동작이 달라진다 EVENT filter 와 flags 에 대한 이해가 필요하다.
+            /* catch cgi process is end */
+            if (curr_event->filter == EVFILT_PROC && curr_event->fflags == NOTE_EXIT){
+                std::cout << "CGI PROCESS IS DONE" << std::endl;
+                waitCgiEnd(*curr_event);
+            }
+
             /* check error event return */
-            if (curr_event->flags & EV_ERROR) {
+            else if (curr_event->flags & EV_ERROR) {
                 std::cout << "ERROR ! : " << curr_event->ident << std::endl;
                 if (std::find(_m_server_socket.begin(), _m_server_socket.end(), curr_event->ident) != _m_server_socket.end())
                     exit_with_perror("server socket error");
