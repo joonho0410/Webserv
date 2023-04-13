@@ -107,7 +107,12 @@ void Response::_M_initStatusCodeBodyMap(void){
     _m_statusCodeMessageMap[401] = "The requested resource requires authentication.";
     _m_statusCodeMessageMap[403] = "You don't have permission to access this resource.";
     _m_statusCodeMessageMap[404] = "The requested resource could not be found.";
-    _m_statusCodeMessageMap[500] = "The server encountered an unexpected condition that prevented it from fulfilling the request.";
+    _m_statusCodeMessageMap[405] = "405 Method Not Allowed The method specified\
+        in the request is not allowed for the resource identified by the request URI.";
+    _m_statusCodeMessageMap[413] = "413 Payload Too Large\
+        The request entity is larger than the server is willing or able to process.";
+    _m_statusCodeMessageMap[500] = "The server encountered an unexpected condition\
+         that prevented it from fulfilling the request.";
 }
 
 void    Response::ErrorCodeBody(int errorCode)
