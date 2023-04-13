@@ -224,7 +224,8 @@ void ServerEngine::readDocs(struct kevent& curr_event){
         std::cout << "Read ERROR ! " << std::endl;
         return ;
     }
-
+    res.setErrorCode(200);
+    res.addHeader("Content-type", "text/html; charset=UTF-8");
     close(curr_event.ident);
     udata->setState(WRITE_RESPONSE);
     _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
@@ -267,10 +268,14 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     Response &res = udata->getResponse();
     Request &req = udata->getRequest();
+    res.addBasicHeader();
     std::string responseString = res.getResponse();
     const char* ret = responseString.c_str();
     int len = responseString.length();
     int bytes_written = write(curr_event.ident, ret, len);
+
+    std::cout << "========== RESPONSE ===========" << std::endl;
+    std::cout << ret << std::endl;
 
     if (bytes_written < 0){
         std::cout << "WRITE ERROR" << std::endl;
