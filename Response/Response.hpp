@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <string>
 #include <map>
 
 enum Response_erorr{
@@ -17,6 +18,7 @@ class Response
 
         void _M_initStatusCodeMap(void);
         void setResponseByErrorCode(int errorCode);
+        std::string ErrorCodeBody(int errorCode);
     public :
         Response();
         ~Response();

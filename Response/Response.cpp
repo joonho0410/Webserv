@@ -34,7 +34,6 @@ std::map<std::string, std::string> Response::getHeader(){ return _m_header;}
 std::string Response::getResponse(){
     std::string response;
     
-    setResponseByErrorCode(400);
     response.append(_m_statusLine + "\n");
     for (std::map<std::string, std::string>::const_iterator it = this->_m_header.begin(); it != this->_m_header.end(); it++){
         std::string str = it->first + ": " + it->second;
@@ -42,6 +41,8 @@ std::string Response::getResponse(){
         if (std::next(it) != _m_header.end())
             response.append("\n");
     }
+    addBasicHeader();
+    setResponseByErrorCode(400);
     response.append("\r\n");
     response.append(_m_response);
     return response;
@@ -92,11 +93,57 @@ void Response::_M_initStatusCodeMap(void) {
 
 void    Response::setResponseByErrorCode(int errorCode) {
     // _m_header = 
-    // // _m_response = 
-    this->addBasicHeader();
-    this->_m_response.append("Content-Type: text/html\n");
-    this->_m_response.append(_m_header["Content-Length"]);
-    this->_m_response.append(_m_header["Date"]);
-    this->_m_response.append(_m_header["Server"]);
+    // _m_response = 
     _m_errorCode = errorCode;
+    setStatusLine(errorCode);
+    _m_header["Content-Type"] = "text/html";
+    _m_response.append(ErrorCodeBody(errorCode));
+}
+
+// HTTP/1.1 404 Not Found
+// Content-Type: text/html; charset=UTF-8
+// Content-Length: 1245
+// Date: Wed, 13 Apr 2023 12:34:56 GMT
+
+// <!DOCTYPE html>
+// <html>
+// <head>
+// 	<title>404 Not Found</title>
+// </head>
+// <body>
+// 	<h1>404 Not Found</h1>
+// 	<p>The requested resource could not be found.</p>
+// </body>
+// </html>
+
+
+
+
+
+std::string    Response::ErrorCodeBody(int errorCode)
+{
+    std::string body;
+    std::map<int, std::string> statusCodeMessageMap;
+
+    statusCodeMessageMap[400] = "The server cannot process the request due to a client error.";
+    statusCodeMessageMap[401] = "The requested resource requires authentication.";
+    statusCodeMessageMap[403] = "You don't have permission to access this resource.";
+    statusCodeMessageMap[404] = "The requested resource could not be found.";
+    statusCodeMessageMap[500] = "The server encountered an unexpected condition that prevented it from fulfilling the request.";
+
+    body += "<!DOCTYPE html>\n";
+    body += "<html>\n";
+    body += "<head>\n";
+    body += "   <title>" + std::to_string(errorCode)
+        + " " + _m_statusCodeMap[errorCode]
+        + "</title>\n";
+    body += "</head>\n";
+    body += "<body>\n";
+    body += "   <h1>"+ std::to_string(errorCode)
+        + " " + _m_statusCodeMap[errorCode]
+        + "</h1>\n";
+    body += "   <p>" + statusCodeMessageMap[errorCode] + "</p>\n";
+    body += "</body>\n";
+    body += "</html>";
+    return (body);
 }
