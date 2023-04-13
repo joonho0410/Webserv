@@ -20,7 +20,6 @@ class Response
 
         void _M_initStatusCodeMap(void);
         void _M_initStatusCodeBodyMap(void);
-        void setResponseByErrorCode(int errorCode);
         void ErrorCodeBody(int errorCode);
         void _M_parseAndSetHeader(std::string header);
     public :

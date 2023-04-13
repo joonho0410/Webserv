@@ -34,7 +34,6 @@ std::map<std::string, std::string> Response::getHeader(){ return _m_header;}
 std::string Response::getResponse(){
     std::string response;
     
-    // setResponseByErrorCode(400);
     response.append(_m_statusLine + "\n");
     for (std::map<std::string, std::string>::const_iterator it = this->_m_header.begin(); it != this->_m_header.end(); it++){
         std::string str = it->first + ": " + it->second;
@@ -42,7 +41,6 @@ std::string Response::getResponse(){
         if (std::next(it) != _m_header.end())
             response.append("\n");
     }
-    addBasicHeader();
     response.append("\r\n");
     response.append(_m_response);
     return response;
@@ -69,7 +67,8 @@ void Response::addBasicHeader() {
 
     _m_header["Server"] = "webserv/1.0";
     _m_header["Date"] = std::string(dt);
-    _m_header["Content-Length"] = _m_response.length();
+    _m_header["Date"] = _m_header["Date"].substr(0, _m_header["Date"].length() - 1);
+    _m_header["Content-Length"] = std::to_string(_m_response.length());
     //Content-Type은 리소스 불러올때 적어줘야함
 }
 
@@ -103,21 +102,12 @@ void Response::_M_initStatusCodeMap(void) {
 	_m_statusCodeMap[500] = "Internal Server Error";
 }
 
-<<<<<<< HEAD
 void Response::_M_initStatusCodeBodyMap(void){
     _m_statusCodeMessageMap[400] = "The server cannot process the request due to a client error.";
     _m_statusCodeMessageMap[401] = "The requested resource requires authentication.";
     _m_statusCodeMessageMap[403] = "You don't have permission to access this resource.";
     _m_statusCodeMessageMap[404] = "The requested resource could not be found.";
     _m_statusCodeMessageMap[500] = "The server encountered an unexpected condition that prevented it from fulfilling the request.";
-}
-
-void    Response::setResponseByErrorCode(int errorCode) {
-    _m_errorCode = errorCode;
-    setStatusLine(errorCode);
-    _m_header["Content-Type"] = "text/html";
-    ErrorCodeBody(errorCode);
-    addBasicHeader();
 }
 
 void    Response::ErrorCodeBody(int errorCode)
@@ -138,7 +128,7 @@ void    Response::ErrorCodeBody(int errorCode)
     body += "   <p>" + _m_statusCodeMessageMap[errorCode] + "</p>\n";
     body += "</body>\n";
     body += "</html>";
-    body += "\n\n";
+    // body += "\n\n";
     appendResponse(body);
 }
 
@@ -159,7 +149,7 @@ void    Response::ErrorCodeBody(int errorCode)
 // 	<p>The requested resource could not be found.</p>
 // </body>
 // </html>
-=======
+
 void Response::_M_parseAndSetHeader(std::string header) {
     bool    valid = true;
 
@@ -193,6 +183,9 @@ void Response::_M_parseAndSetHeader(std::string header) {
 }
 
 void    Response::setResponseByErrorCode(int errorCode) {
-    std::cout << "CGI HEADER RETURN IS WRONG!!!!!!" << std::endl;
+    _m_errorCode = errorCode;
+    setStatusLine(errorCode);
+    _m_header["Content-Type"] = "text/html";
+    ErrorCodeBody(errorCode);
+    addBasicHeader();
 }
->>>>>>> origin/jaehyuki
