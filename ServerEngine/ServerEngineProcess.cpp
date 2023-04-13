@@ -249,8 +249,8 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         ;//50x server error;
     buf[readsize] = '\0';
     std::string str = std::string(buf);
-    udata->getResponse().appendResponse(str);
 
+    udata->getResponse().setResponseByCgiResult(str);
     delete []buf;
     /* 파일의 역할을 모두 했으니 여기서 close 해줘야할까? */
     //close(fileno(udata->getinFile()));
