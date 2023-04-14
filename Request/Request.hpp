@@ -58,6 +58,7 @@ class Request
     private:
         /* initialize need */
         size_t  _m_bodyMaxSize;
+        size_t  _m_chunkedRemain;
         int     _m_state;
         int     _m_errorCode;
 

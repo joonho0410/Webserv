@@ -21,8 +21,25 @@ void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, 
 bool ServerEngine::_M_checkMethod(struct server_config_struct& serv, struct server_config_struct& loca, std::string method)
 {
     std::vector<std::string> temp;
-
+    
+    std::cout << "_M_CHECKMETHOD IS OCCURED " << std::endl;
     /* first check location block if not thne check serv block */
+    if (loca.valid != false && loca.key_and_value.find("allow") != loca.key_and_value.end()) {
+        temp = loca.key_and_value.find("allow")->second;
+        for (int i = 0; i < temp.size(); ++i) {
+            if (method.compare(temp[i]) == 0)
+                return true;
+        }
+        return false;
+    } else if (serv.key_and_value.find("allow") != serv.key_and_value.end()){
+        temp = serv.key_and_value.find("allow")->second;
+        for (int i = 0; i < temp.size(); ++i) {
+            if (method.compare(temp[i]) == 0)
+                return true;
+        }
+        return false;
+    }
+    
     if (loca.valid != false && loca.key_and_value.find("deny") != loca.key_and_value.end()) {
         temp = loca.key_and_value.find("deny")->second;
         for (int i = 0; i < temp.size(); ++i) {

@@ -144,10 +144,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
 
     /* START CGI_PROCESS */
     if (isCgi == true) {
-        /* check metohd is allowed */ 
+        /* check metohd is allowed */
         if (!_M_checkMethod(serv, loca, req.getMethod())){
             std::cout << "not allowed method" << std::endl;//not allowed method;
-            exit(1);// replace need 405 error;
+            exit(1);// replace need 403 FORBIDDEN error;
         }
         /* check Body Size */ 
         if (req.getMethod().compare("POST") == 0) {
@@ -163,34 +163,35 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             serverUrl = *loca.key_and_value["alias"].begin() + url;
         else if (loca.key_and_value.find("root") != loca.key_and_value.end())
             serverUrl = (*loca.key_and_value["root"].begin()) + loca.block_name + url;
-        else if (url == ""){
+        
+        if (url == ""){
             /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 / done */
             bool checkIndex = false;
-            std::string prefix;
-
-            if (loca.key_and_value.find("alias") != loca.key_and_value.end())
-                prefix = *loca.key_and_value["alias"].begin();
-            else if (loca.key_and_value.find("root") != loca.key_and_value.end())
-                prefix = (*loca.key_and_value["root"].begin());
+            std::string tempServerUrl = serverUrl;
 
             if (*loca.key_and_value.find("index") != *loca.key_and_value.end()){
-                std::vector<std::string> temp = loca.key_and_value.find("index")->second;
+                std::cout << "find index " << std::endl;
+                std::vector<std::string> &temp = loca.key_and_value.find("index")->second;
                 for (int i = 0; i < temp.size(); ++i) {
-                    serverUrl = prefix + *loca.key_and_value["index"].begin();
-                    std::ifstream fileStream(serverUrl.c_str());
+                    tempServerUrl =  serverUrl + temp[i];
+                    std::cout << serverUrl << std::endl;
+                    std::ifstream fileStream(tempServerUrl.c_str());
                     if (fileStream.good()) {
                         std::cout << "File exists." << std::endl;
+                        serverUrl = tempServerUrl;
+                        checkIndex = true;
                         break;
                     } else {
                         std::cout << "File does not exist." << std::endl;
                     }
                 }
             }
+
             if (checkIndex == false){
                 std::cout << "index is not available" << std::endl;        
             }
-        } else 
-            serverUrl = req.getUrl();
+
+        }
         req.setServerUrl(serverUrl);
 
         /* 함수 나누면 좋을듯? */
@@ -227,8 +228,13 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         std::cout << "url is : " << url << std::endl;
         /* check metohd is allowed */ 
         if (!_M_checkMethod(serv, loca, req.getMethod())){
-            std::cout << "not allowed method" << std::endl;//not allowed method;
-            exit(1);// replace need 405 error;
+            // Response& res = udata->getResponse();
+            // std::string temp = "HTTP/1.1 405 FORBIDDEN\r\nserver: webserv/1.1\r\nDate: Wed, 04 Jul 2018 01:42:11 GMT\r\nContent-Type: text/html\r\nContent-length: 10\r\n\r\n0123456789";
+            // res.apeendResponse(temp);
+            // std::cout << "not allowed method" << std::endl;//not allowed method;
+            // udata->setState(WRITE_RESPONSE);
+            // _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+            // return ;// replace need 405 error;
         }
         /* check_Body_size */
         if (req.getMethod().compare("POST") == 0) {
@@ -245,11 +251,36 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             serverUrl = *loca.key_and_value["alias"].begin() + url;
         else if (loca.key_and_value.find("root") != loca.key_and_value.end())
             serverUrl = (*loca.key_and_value["root"].begin()) + loca.block_name + url;
-        else if (url == ""){
-            /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 */
-            serverUrl = *loca.key_and_value["root"].begin() + loca.block_name + *loca.key_and_value["index"].begin();
-        } else
-        serverUrl = req.getUrl();
+        
+        if (url == ""){
+            /* index 의 마지막까지 순회하면서 맞는파일이 있는지 확인하도록 수정해야함 / done */
+            bool checkIndex = false;
+            std::string tempServerUrl = serverUrl;
+
+            if (*loca.key_and_value.find("index") != *loca.key_and_value.end()){
+                std::cout << "find index " << std::endl;
+                std::vector<std::string> &temp = loca.key_and_value.find("index")->second;
+                for (int i = 0; i < temp.size(); ++i) {
+                    tempServerUrl =  serverUrl + temp[i];
+                    std::cout << serverUrl << std::endl;
+                    std::ifstream fileStream(tempServerUrl.c_str());
+                    if (fileStream.good()) {
+                        std::cout << "File exists." << std::endl;
+                        serverUrl = tempServerUrl;
+                        checkIndex = true;
+                        break;
+                    } else {
+                        std::cout << "File does not exist." << std::endl;
+                    }
+                }
+            }
+
+            if (checkIndex == false){
+                std::cout << "index is not available" << std::endl;        
+            }
+
+        }// } else
+        //     serverUrl = req.getUrl();
 
         std::cout << "server url is : " << serverUrl << std::endl;
         int fd = open(serverUrl.c_str(), O_RDONLY);
@@ -347,6 +378,7 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     }
     udata->clean();
     std::cout << "WRITE RESPONSE IS OCCURED " << std::endl;
+    std::cout << "================= END RESPONSE WAITING ANOTHER REQUEST =====================" << std::endl;
     _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, curr_event.udata);
     return ;
 }
