@@ -137,7 +137,6 @@ void    Response::ErrorCodeBody(int errorCode)
     appendResponse(body);
 }
 
-
 // Error Response Example
 // HTTP/1.1 404 Not Found
 // Content-Type: text/html; charset=UTF-8

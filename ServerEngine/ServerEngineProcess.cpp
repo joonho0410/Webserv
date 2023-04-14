@@ -293,12 +293,12 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     Request &req = udata->getRequest();
     std::string responseString;
 
-    if (req.getErrorCode() == WRONG_PARSING)
-    {
-        res.setResponseByErrorCode(WRONG_PARSING);
-        responseString = res.getResponse();
-    }
-    else if (req.getErrorCode() == OK)
+    // if (req.getErrorCode() == WRONG_PARSING)
+    // {
+    //     res.setResponseByErrorCode(WRONG_PARSING);
+    //     responseString = res.getResponse();
+    // }
+    if (req.getErrorCode() == OK)
         responseString = res.getResponse();
         // std::string responseString = res.getResponse();
     else if (req.getErrorCode() == 404)
@@ -308,7 +308,7 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     }
     else
     {
-        res.setResponseByErrorCode(WRONG_PARSING);
+        res.setResponseByErrorCode(req.getErrorCode());
         responseString = res.getResponse();
     }
     const char* ret = responseString.c_str();
