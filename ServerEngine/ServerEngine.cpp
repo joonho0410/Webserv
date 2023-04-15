@@ -20,7 +20,7 @@ void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, 
 
 bool ServerEngine::_M_checkMethod(struct server_config_struct& serv, struct server_config_struct& loca, std::string method)
 {
-    std::vector<std::string> &temp;
+    std::vector<std::string> temp;
     
     std::cout << "_M_CHECKMETHOD IS OCCURED " << std::endl;
     /* first check location block if not thne check serv block */
