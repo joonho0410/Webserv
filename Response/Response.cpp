@@ -1,10 +1,10 @@
 #include "Response.hpp"
 
-
 /* CONSTRUCTOR */
 Response::Response(){
     _m_errorCode = RESPONSE_OK;
     _M_initStatusCodeMap();
+    _M_initStatusCodeBodyMap();
 }
 
 Response::~Response(){
@@ -37,7 +37,7 @@ std::map<std::string, std::string> Response::getHeader(){ return _m_header;}
 
 std::string Response::getResponse(){
     std::string response;
-
+    
     response.append(_m_statusLine + "\n");
     for (std::map<std::string, std::string>::const_iterator it = this->_m_header.begin(); it != this->_m_header.end(); it++){
         std::string str = it->first + ": " + it->second;
@@ -72,7 +72,8 @@ void Response::addBasicHeader() {
     setStatusLine(_m_errorCode);
     _m_header["Server"] = "webserv/1.0";
     _m_header["Date"] = std::string(dt);
-    _m_header["Content-Length"] = std::to_string(_m_response.length() -1);
+    _m_header["Date"] = _m_header["Date"].substr(0, _m_header["Date"].length() - 1);
+    _m_header["Content-Length"] = std::to_string(_m_response.length());
     //Content-Type은 리소스 불러올때 적어줘야함
 }
 
@@ -105,6 +106,58 @@ void Response::_M_initStatusCodeMap(void) {
 	_m_statusCodeMap[413] = "Payload Too Large";
 	_m_statusCodeMap[500] = "Internal Server Error";
 }
+
+void Response::_M_initStatusCodeBodyMap(void){
+    _m_statusCodeMessageMap[400] = "The server cannot process the request due to a client error.";
+    _m_statusCodeMessageMap[401] = "The requested resource requires authentication.";
+    _m_statusCodeMessageMap[403] = "You don't have permission to access this resource.";
+    _m_statusCodeMessageMap[404] = "The requested resource could not be found.";
+    _m_statusCodeMessageMap[405] = "405 Method Not Allowed The method specified\
+        in the request is not allowed for the resource identified by the request URI.";
+    _m_statusCodeMessageMap[413] = "413 Payload Too Large\
+        The request entity is larger than the server is willing or able to process.";
+    _m_statusCodeMessageMap[500] = "The server encountered an unexpected condition\
+         that prevented it from fulfilling the request.";
+}
+
+void    Response::ErrorCodeBody(int errorCode)
+{
+    std::string body;
+    body += "\n";
+    body += "<!DOCTYPE html>\n";
+    body += "<html>\n";
+    body += "<head>\n";
+    body += "   <title>" + std::to_string(errorCode)
+        + " " + _m_statusCodeMap[errorCode]
+        + "</title>\n";
+    body += "</head>\n";
+    body += "<body>\n";
+    body += "   <h1>"+ std::to_string(errorCode)
+        + " " + _m_statusCodeMap[errorCode]
+        + "</h1>\n";
+    body += "   <p>" + _m_statusCodeMessageMap[errorCode] + "</p>\n";
+    body += "</body>\n";
+    body += "</html>";
+    // body += "\n\n";
+    appendResponse(body);
+}
+
+// Error Response Example
+// HTTP/1.1 404 Not Found
+// Content-Type: text/html; charset=UTF-8
+// Content-Length: 1245
+// Date: Wed, 13 Apr 2023 12:34:56 GMT
+
+// <!DOCTYPE html>
+// <html>
+// <head>
+// 	<title>404 Not Found</title>
+// </head>
+// <body>
+// 	<h1>404 Not Found</h1>
+// 	<p>The requested resource could not be found.</p>
+// </body>
+// </html>
 
 void Response::_M_parseAndSetHeader(std::string header) {
     bool    valid = true;
@@ -139,5 +192,9 @@ void Response::_M_parseAndSetHeader(std::string header) {
 }
 
 void    Response::setResponseByErrorCode(int errorCode) {
-    std::cout << "CGI HEADER RETURN IS WRONG!!!!!!" << std::endl;
+    _m_errorCode = errorCode;
+    setStatusLine(errorCode);
+    _m_header["Content-Type"] = "text/html";
+    ErrorCodeBody(errorCode);
+    addBasicHeader();
 }

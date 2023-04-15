@@ -217,7 +217,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         else{
             // open error == 404 error //
             std::cout << "open error" << std::endl;
-            _M_disconnectClient(curr_event, _m_clients);
+            req.setErrorCode(404);
+            udata->setState(WRITE_RESPONSE);
+            _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+            // _M_disconnectClient(curr_event, _m_clients);
         }
     }                            
     /* GET POST METHOD SERVING CGI */
@@ -289,8 +292,26 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     Response &res = udata->getResponse();
     Request &req = udata->getRequest();
-    res.addBasicHeader();
-    std::string responseString = res.getResponse();
+    std::string responseString;
+
+    // if (req.getErrorCode() == WRONG_PARSING)
+    // {
+    //     res.setResponseByErrorCode(WRONG_PARSING);
+    //     responseString = res.getResponse();
+    // }
+    if (req.getErrorCode() == OK)
+        responseString = res.getResponse();
+        // std::string responseString = res.getResponse();
+    else if (req.getErrorCode() == 404)
+    {
+        res.setResponseByErrorCode(404);
+        responseString = res.getResponse();
+    }
+    else
+    {
+        res.setResponseByErrorCode(req.getErrorCode());
+        responseString = res.getResponse();
+    }
     const char* ret = responseString.c_str();
     int len = responseString.length();
     int bytes_written = write(curr_event.ident, ret, len);

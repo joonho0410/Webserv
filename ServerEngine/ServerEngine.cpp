@@ -151,7 +151,7 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
             std::string temp = std::string(buf);
             req.appendBuf(temp);
             req.parseBuf();
-            if (req.getState() == REQUEST_FINISH || req.getState() == REQUEST_FINISH)
+            if (req.getState() == REQUEST_FINISH || req.getState() == REQUEST_ERROR)
                 break;
             memset(buf, 0, sizeof(buf));
             if (n < 1023)
@@ -279,8 +279,7 @@ void ServerEngine::start_kqueue()
                     case EXCUTE_CGI:        excuteCgi(*curr_event); break;
                     case WRITE_CGI_BODY:    writeCgiBody(*curr_event); break;
                 }
-
-                std::cout <<curr_event->ident << " : WRITE EVENT IS DONE " << std::endl;       
+                std::cout <<curr_event->ident << " : WRITE EVENT IS DONE " << std::endl;
             }
         }
     }
