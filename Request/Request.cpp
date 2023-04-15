@@ -118,7 +118,7 @@ void Request::_M_parseStartLine(size_t n)
     line = _m_buf.substr(0, n);
     keyEnd = line.find_first_of(" ", keyStart);
     key = line.substr(keyStart, keyEnd - keyStart);
-    if (!((key.compare("GET") == 0) || (key.compare("POST") == 0) || (key.compare("DELETE") == 0 )))
+    if (!((key.compare("GET") == 0) || (key.compare("POST") == 0) || (key.compare("DELETE") == 0 ) || (key.compare("HEAD") == 0)))
     {
         std::cout << key << " is ";
         std::cout << "invalid http method " << std::endl;
