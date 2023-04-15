@@ -1,4 +1,5 @@
 #include "Request.hpp"
+#include <unistd.h>
 
 Request::Request()
 {
@@ -6,13 +7,16 @@ Request::Request()
     _m_buf.clear();
     _m_state = READ_START_LINE;
     _m_errorCode = OK;
+    _m_chunkedRemain = 0;
 }
 
 void Request::clean()
 {
     _m_bodyMaxSize = 0;
+    _m_chunkedRemain = 0;
     _m_state = READ_START_LINE;
     _m_errorCode = OK;
+
     _m_header.clear();
     _m_startLine.clear();
     _m_body.clear();
@@ -68,10 +72,11 @@ void Request::parseBuf()
 
     while (1)
     {
-        if (_m_state == REQUEST_FINISH || _m_state == REQUEST_ERROR)
+        if (_m_state == REQUEST_FINISH || _m_state == REQUEST_ERROR || _m_buf.empty())
             break;
         findCRLF = _m_buf.find("\r\n");
-        if (findCRLF == std::string::npos)// && _m_state != READ_BODY)
+        if ((findCRLF == std::string::npos &&
+         !(_m_state == READ_BODY || _m_state == READ_BODY_CHUNKED)))
             break;
         switch (_m_state)
         {
@@ -86,6 +91,8 @@ void Request::parseBuf()
             case READ_BODY:
                 std::cout << "READ_BODY OCCURED" << std::endl;
                 _M_parseBody();
+                // std::cout << "========= READ BODY =========" << std::endl;
+                // std::cout << _m_body.size() << std::endl;
                 break;
             case READ_BODY_CHUNKED:
                 _M_parseBodyChunked(findCRLF);
@@ -101,7 +108,7 @@ void Request::_M_parseStartLine(size_t n)
 {
     size_t  keyStart = 0;
     size_t  keyEnd = 0;
-    size_t  pos;
+    size_t  pos = 0;
     size_t  questionMarkCount = 0;
 
     std::string key;
@@ -113,6 +120,7 @@ void Request::_M_parseStartLine(size_t n)
     key = line.substr(keyStart, keyEnd - keyStart);
     if (!((key.compare("GET") == 0) || (key.compare("POST") == 0) || (key.compare("DELETE") == 0 )))
     {
+        std::cout << key << " is ";
         std::cout << "invalid http method " << std::endl;
         _m_state = REQUEST_ERROR;   
         _m_errorCode = WRONG_PARSING;
@@ -123,12 +131,14 @@ void Request::_M_parseStartLine(size_t n)
 
     keyEnd = line.find_first_of(" ", keyStart);
     key = line.substr(keyStart, keyEnd - keyStart);
+    // std::cout << "KEY = " << key << std::endl;
     while ((pos = key.find("?", pos)) != std::string::npos){
         ++questionMarkCount;
         if (questionMarkCount > 1)
             break ;
         ++pos;
     }
+
     if (questionMarkCount > 1){
          _m_state = REQUEST_ERROR;   
         _m_errorCode = WRONG_PARSING;
@@ -250,6 +260,10 @@ void Request::_M_parseBody()
             _m_buf.clear();
             _m_state = REQUEST_FINISH;
         }
+        // std::cout << "need read len " << std::endl;
+        // std::cout << num << std::endl;
+        // std::cout << _m_body.size() << std::endl;
+        // std::cout << _m_buf.size() << std::endl;
     }
     catch (std::length_error &e)
     {
@@ -260,6 +274,9 @@ void Request::_M_parseBody()
 
 void Request::_M_parseBodyChunked(size_t CRLF)
 {
+    std::cout << "_M_parseBodyChunked OCCURED " << std::endl;
+    std::cout << "_m_buf :: " << _m_buf << std::endl;
+    std::cout << "_m_buf size :: " << _m_buf.size() << std::endl;
     try {        
         size_t      bodyLen;
         size_t      lineStart = 0;
@@ -268,30 +285,44 @@ void Request::_M_parseBodyChunked(size_t CRLF)
         std::string chunked_body;
         char *endPtr;
         long len;
+        if (_m_state == REQUEST_ERROR || _m_buf.size() == 0)
+            return ;
+
+        if (CRLF == std::string::npos && _m_chunkedRemain == 0){
+            if (_m_buf[0] == '0'){
+                std::cout << "CHUNKED BODY END :: " << _m_buf << std::endl;
+                _m_buf = _m_buf.substr(1);
+                _m_state = REQUEST_FINISH;
+                return ;
+            }  
+        } else if (CRLF != std::string::npos && _m_chunkedRemain == 0){ //accept new chunked length; 
+            if (_m_buf[0] == '0'){
+                std::cout << "CHUNKED BODY END :: " << _m_buf << std::endl;
+                _m_buf = _m_buf.substr(1);
+                _m_state = REQUEST_FINISH;
+                return ;
+            }length = _m_buf.substr(0, CRLF);
+            if (!ft_ishexdigit(length)){
+                _m_state = REQUEST_ERROR;
+                _m_errorCode = WRONG_BODY;
+                return ;
+            }
+            long decimalNum = strtol(length.c_str(), &endPtr, 16); // 16진수 문자열을 10진수로 변환
+            _m_chunkedRemain = static_cast<size_t>(decimalNum);
+            
+            if (*endPtr != '\0') {//    strtol error
+                _m_state = REQUEST_ERROR;
+                _m_errorCode = WRONG_BODY;
+                return ;
+            }
+            _m_buf = _m_buf.substr(CRLF + 2);
+        }
         
-        if (_m_state == REQUEST_ERROR)
-            return ;
-        length = _m_buf.substr(0, CRLF);
-        if (!ft_ishexdigit(length)){
-            _m_state = REQUEST_ERROR;
-            _m_errorCode = WRONG_BODY;
-            return ;
-        }
-        long decimalNum = strtol(length.c_str(), &endPtr, 16); // 16진수 문자열을 10진수로 변환
-        if (*endPtr != '\0') {
-            _m_state = REQUEST_ERROR;
-            _m_errorCode = WRONG_BODY;
-        }
-        bodyLen = static_cast<size_t>(decimalNum);
-        lineStart = CRLF + 2;
-        if (_m_buf.find("\r\n", lineStart) == std::string::npos || _m_buf.size() < length.size() + bodyLen + 4)
-            return ;
-        chunked_body = _m_buf.substr(lineStart, bodyLen);
-        _M_appendBody(chunked_body);
-        _m_buf = _m_buf.substr(0, lineStart + bodyLen);
-        if (bodyLen == 0 && chunked_body.empty()){
-            _m_state = REQUEST_FINISH;
-            return ;
+        if (_m_chunkedRemain != 0){//remain some read chunked body
+            chunked_body = _m_buf.substr(0, _m_chunkedRemain);
+            _m_chunkedRemain -= chunked_body.size();
+            _m_buf = _m_buf.substr(chunked_body.size());
+            _M_appendBody(chunked_body);
         }
     }
     catch (std::length_error &e)
@@ -331,12 +362,12 @@ void Request::_M_parseKeyValue(std::string const &line)
 
 bool Request::_M_checkBodyIsComing()
 {
+    std::cout << "_M_checkBodyIsComig" << std::endl;
     if (_m_header.find("CONTENT-TYPE") != _m_header.end() && 
     _m_header.find("CONTENT-LENGTH") != _m_header.end()){
         _m_state = READ_BODY;
         return true;
-    }
-    else if (_m_header.find("TRANSEFER-ENCODING") != _m_header.end()){
+    } else if (_m_header.find("TRANSFER-ENCODING") != _m_header.end()){
         _m_state = READ_BODY_CHUNKED;
         return true;
     }
@@ -367,6 +398,7 @@ void Request::_M_parseRequestheader()
         lineStart = lineEnd + 2;
     }
     _m_buf = _m_buf.substr(lineStart);
+    std::cout << "when REQUEST HEADER IS ENDED ::: " << _m_buf.size() << std::endl;
 }
 
 /* getter & setter */

@@ -35,8 +35,6 @@ void    CgiHandler::_M_initEnv(Request &request )
     size_t      deli;
     
     hostHeader = *(header["HOST"].begin());
-    http://naver.com -> naver.com:80
-    htpps://naver.com -> naver.com:433
     deli = hostHeader.find_first_of(":");
     if (deli != std::string::npos){
         this->_m_env["SERVER_NAME"] = hostHeader.substr(0, deli);
@@ -86,7 +84,9 @@ char    **CgiHandler::_M_get_envArr() const {
     return (env);
 }
 
-std::string CgiHandler::executeCgi() {
+#include <unistd.h>
+
+int CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
     std::string body = this->_m_request.getBody();
     const char  *script_name = this->_m_env.find("SCRIPT_NAME")->second.c_str();
@@ -101,13 +101,13 @@ std::string CgiHandler::executeCgi() {
         dup2(_m_inFilefd, STDIN);
         dup2(_m_outFilefd, STDOUT);
         execve(script_name, NULL, env);
+        write(2, "CGI FAILED\n", 11);
         std::cout << "EXECUTE CGI FAIL!" << std::endl;
     }
     else
     {
-        waitpid(-1, 0, 0);
         std::cout << "waiting cgi is done" << std::endl;
-        lseek(_m_outFilefd, 0, SEEK_SET);
+        // lseek(_m_outFilefd, 0, SEEK_SET);
     }
     std::cout << "executed CGI is done !" << std::endl;
     int i = 0;
@@ -116,5 +116,6 @@ std::string CgiHandler::executeCgi() {
         ++i;
     }
     delete []env;
-    return (rv);
+
+    return (pid);
 }
