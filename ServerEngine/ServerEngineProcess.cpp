@@ -2,6 +2,7 @@
 
 void ServerEngine::waitCgiEnd(struct kevent &curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+    Request& req = udata->getRequest();
     int status;
 
     waitpid(curr_event.ident, &status, 0);//프로세스 회수
@@ -10,14 +11,19 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
             std::cout << "process not ended with 0 " << WEXITSTATUS(status) << std::endl;// 비 정상 종료 이므로 50x error
             fclose(udata->getinFile());
             fclose(udata->getoutFile());
-            //50x error 
+            
+            udata->setState(WRITE_RESPONSE);
+            req.setErrorCode(500);//500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
+            _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
             return ;
         }
     } else {
         fclose(udata->getinFile());
         fclose(udata->getoutFile());
         std::cout << "process ennded with some signal" << std::endl;
-        // 마찬가지로 비정상 종료이므로 50x error
+        udata->setState(WRITE_RESPONSE);
+        req.setErrorCode(500);//500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
+        _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;
     }
 
@@ -59,7 +65,7 @@ void ServerEngine::readRequest(struct kevent& curr_event){
             break;
         case REQUEST_FINISH:
             std::cout << "REQUEST_FINISH then req.show_save()" << std::endl;
-            req.show_save();
+            // req.show_save();
             _M_executeRequest(curr_event, req);
             break;
         default:
@@ -89,7 +95,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     /* HOST 는 반드시 필요한 헤더이므로 있는지 없는지 확인하는 작업이 필요하다 존재하지않으면 40x error 나중에 header parsing 이 끝나면 check_valid 함수를 새로 파서 체크하는게 더 예쁠듯?*/
     if (header.find("HOST") == header.end()){
         std::cout << "HOST is not available " << std::endl;
-        req.setErrorCode(WRONG_PARSING);
+        req.setErrorCode(WRONG_PARSING);// 400 error
         res.setErrorCode(req.getErrorCode());
         udata->setState(WRITE_RESPONSE);
         _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE , EV_ADD | EV_ONESHOT, 0, 0, udata);
@@ -113,7 +119,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     serv = _M_findServerPort(ports, serverName);
     if (serv.valid == false){
         std::cout << " can't find server block " << std::endl; // can't find server block return error
-        exit(1); // 404 error page; 
+        req.setErrorCode(404);//404 Not Found: 클라이언트가 요청한 리소스가 서버에 없는 경우
+        udata->setState(WRITE_RESPONSE);
+        _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;
     } else {
         loca = _M_findLocationBlock(serv, url);
         if (loca.valid == false)
@@ -146,17 +155,25 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     if (isCgi == true) {
         /* check metohd is allowed */
         if (!_M_checkMethod(serv, loca, req.getMethod())){
-            std::cout << "not allowed method" << std::endl;//not allowed method;
-            exit(1);// replace need 403 FORBIDDEN error;
+            udata->setState(WRITE_RESPONSE);
+            req.setErrorCode(403);//403 Forbidden: 클라이언트가 요청한 리소스에 접근할 권한이 없는 경우
+            _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+            return ;
         }
         /* check Body Size */ 
         if (req.getMethod().compare("POST") == 0) {
+            std::cout << " ========== CHECK SIZE ================= " << std::endl;
             if (loca.key_and_value.find("client_max_body_size") != loca.key_and_value.end())
                 isBodyOk = req.checkBodySize(loca);
             else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
                 isBodyOk = req.checkBodySize(serv);
-            if (isBodyOk == false)
-                ;/* 413 BAD REQUEST return */
+            if (isBodyOk == false){
+                std::cout << "============== is BODY IS FALSE =============== " << std::endl;
+                udata->setState(WRITE_RESPONSE);
+                req.setErrorCode(413);//413 Payload Too Large: 클라이언트가 요청한 엔티티가 서버에서 처리할 수 있는 최대 크기를 초과한 경우
+                _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
         }
 
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
@@ -228,15 +245,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         std::cout << "url is : " << url << std::endl;
         /* check metohd is allowed */ 
         if (!_M_checkMethod(serv, loca, req.getMethod())){
-            std::cout << "not allowed method" << std::endl;//not allowed method;
-            exit(1);// replace need 403 FORBIDDEN error;
-            // Response& res = udata->getResponse();
-            // std::string temp = "HTTP/1.1 405 FORBIDDEN\r\nserver: webserv/1.1\r\nDate: Wed, 04 Jul 2018 01:42:11 GMT\r\nContent-Type: text/html\r\nContent-length: 10\r\n\r\n0123456789";
-            // res.apeendResponse(temp);
-            // std::cout << "not allowed method" << std::endl;//not allowed method;
-            // udata->setState(WRITE_RESPONSE);
-            // _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
-            // return ;// replace need 405 error;
+            udata->setState(WRITE_RESPONSE);
+            req.setErrorCode(403);//403 Forbidden: 클라이언트가 요청한 리소스에 접근할 권한이 없는 경우
+            _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+            return ;
         }
         /* check_Body_size */
         if (req.getMethod().compare("POST") == 0) {
@@ -244,8 +256,11 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 isBodyOk = req.checkBodySize(loca);
             else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
                 isBodyOk = req.checkBodySize(serv);
-            if (isBodyOk == false)
-                ;/* 413 BAD REQUEST return */
+            if (isBodyOk == false){
+                req.setErrorCode(413);//413 Payload Too Large: 클라이언트가 요청한 엔티티가 서버에서 처리할 수 있는 최대 크기를 초과한 경우
+                _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
         }
         
         /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
@@ -276,7 +291,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                     }
                 }
             }
-
             if (checkIndex == false){
                 std::cout << "index is not available" << std::endl;        
             }
@@ -324,7 +338,9 @@ void ServerEngine::readDocs(struct kevent& curr_event){
     }
 
     if (bytesRead < 0){
-        std::cout << "Read ERROR ! " << std::endl;
+        udata->setState(WRITE_RESPONSE);
+        req.setErrorCode(500);// 500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
+        _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;
     }
     res.setErrorCode(200);
@@ -338,27 +354,48 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
     /* read udata->outfile and make response */
     std::cout << "READ CGI RESULT " << std::endl;
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+    Request& req = udata->getRequest();
     char *buf;
 
     int outFilefd = fileno(udata->getoutFile());
     int size = lseek(outFilefd, 0, SEEK_END);
-    if (size == -1)
-        ;//50x server error
+    if (size == -1){
+        fclose(udata->getinFile());
+        fclose(udata->getoutFile());
+
+        udata->setState(WRITE_RESPONSE);
+        req.setErrorCode(500);// 500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
+        _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;        
+    }
     lseek(outFilefd, 0, SEEK_SET);
     buf = new char[size + 1];
-    if (buf == 0)
-        ;//50x server error;
+    if (buf == 0){
+        fclose(udata->getinFile());
+        fclose(udata->getoutFile());
+
+        udata->setState(WRITE_RESPONSE);
+        req.setErrorCode(500);// 500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
+        _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;
+    }
     int readsize = read(outFilefd, buf, size);
-    if (readsize != size)
-        ;//50x server error;
+    if (readsize != size){
+        fclose(udata->getinFile());
+        fclose(udata->getoutFile());
+        delete []buf;
+
+        udata->setState(WRITE_RESPONSE);
+        req.setErrorCode(500);// 500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
+        _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;
+    }
     buf[readsize] = '\0';
     std::string str = std::string(buf);
 
     udata->getResponse().setResponseByCgiResult(str);
     delete []buf;
-    /* 파일의 역할을 모두 했으니 여기서 close 해줘야할까? */
-    //close(fileno(udata->getinFile()));
-    //close(fileno(udata->getoutFile()));
+    /* 파일의 역할을 모두 했으니 여기서 close */
     fclose(udata->getinFile());
     fclose(udata->getoutFile());
     udata->setState(WRITE_RESPONSE);
@@ -392,11 +429,14 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     int len = responseString.length();
     int bytes_written = write(curr_event.ident, ret, len);
 
-    std::cout << "========== RESPONSE ===========" << std::endl;
-    std::cout << ret << std::endl;
+    // std::cout << "========== RESPONSE ===========" << std::endl;
+    // std::cout << ret << std::endl;
 
     if (bytes_written < 0){
-        std::cout << "WRITE ERROR" << std::endl;
+        udata->setState(WRITE_RESPONSE);
+        req.setErrorCode(500);// 500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
+        _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;
     }
     udata->clean();
     std::cout << "WRITE RESPONSE IS OCCURED " << std::endl;
@@ -412,8 +452,9 @@ void ServerEngine::excuteCgi(struct kevent& curr_event){
     CgiHandler cgiHandler(req, fileno(udata->getinFile()), fileno(udata->getoutFile()));
 
     int pid;
-
+    
     pid = cgiHandler.executeCgi();
+    std::cout << "============ pid ========= : " << pid << std::endl;
     udata->setState(WAIT_CGI_END);
     _M_changeEvents(_m_change_list, pid, EVFILT_PROC, EV_ADD | EV_ONESHOT, NOTE_EXIT, 0, udata);
     std::cout << "EXCUTE CGI IS DONE " << std::endl;
@@ -425,7 +466,10 @@ void ServerEngine::writeCgiBody(struct kevent& curr_event){
     Request &req = udata->getRequest();
     std::string str = req.getBody();
     if (write(curr_event.ident, str.c_str(), str.size()) == -1){
-        ;// return server error 50x 
+        udata->setState(WRITE_RESPONSE);
+        req.setErrorCode(500);// 500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
+        _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;
     }
     lseek(curr_event.ident, 0, SEEK_SET);
     udata->setState(EXCUTE_CGI);
