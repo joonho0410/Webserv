@@ -4,6 +4,7 @@
         cgi          .php .sh .py .bla /cgi-bin/;
 
         #charset koi8-r;
+        client_max_body_size 1000;
 
         #access_log  logs/host.access.log  main;
 
