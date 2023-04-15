@@ -12,6 +12,7 @@ class Response
 {
     private :
         int _m_errorCode;
+        bool _m_addhead;
         std::map<int, std::string> _m_statusCodeMap;
         std::map<int, std::string> _m_statusCodeMessageMap;
         std::string _m_statusLine; // ex) HTTP/1.1 200 OK
@@ -29,6 +30,8 @@ class Response
         void setErrorCode(int errorCode);
         void setStatusLine(int errorCode);
         void setHeader(std::map<std::string, std::string> header);
+        void setAddHead(bool b);
+        
         /* Getter */
         std::string     getStatusLine();
         std::map<std::string, std::string> getHeader();

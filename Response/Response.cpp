@@ -3,6 +3,7 @@
 /* CONSTRUCTOR */
 Response::Response(){
     _m_errorCode = RESPONSE_OK;
+    _m_addhead = true;
     _M_initStatusCodeMap();
     _M_initStatusCodeBodyMap();
 }
@@ -29,6 +30,10 @@ void Response::setHeader(std::map<std::string, std::string> header) {
     _m_header = header;
 }
 
+void Response::setAddHead(bool b){
+    _m_addhead = b;
+}
+
 /* Getter */
 
 std::string Response::getStatusLine(){ return _m_statusLine;}
@@ -45,7 +50,8 @@ std::string Response::getResponse(){
         response.append("\n");
     }
     response.append("\r\n");
-    response.append(_m_response);
+    if (_m_addhead)
+        response.append(_m_response);
     return response;
 }
 
@@ -53,6 +59,7 @@ std::string Response::getResponse(){
 
 void Response::clean(){
     _m_errorCode = RESPONSE_OK;
+    _m_addhead = true;
     _m_response.clear();
 }
 
@@ -194,6 +201,7 @@ void Response::_M_parseAndSetHeader(std::string header) {
 void    Response::setResponseByErrorCode(int errorCode) {
     _m_errorCode = errorCode;
     setStatusLine(errorCode);
-    ErrorCodeBody(errorCode);
+    if (_m_addhead)
+        ErrorCodeBody(errorCode);
     addBasicHeader();
 }
