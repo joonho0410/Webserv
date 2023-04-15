@@ -194,7 +194,6 @@ void Response::_M_parseAndSetHeader(std::string header) {
 void    Response::setResponseByErrorCode(int errorCode) {
     _m_errorCode = errorCode;
     setStatusLine(errorCode);
-    _m_header["Content-Type"] = "text/html";
     ErrorCodeBody(errorCode);
     addBasicHeader();
 }
