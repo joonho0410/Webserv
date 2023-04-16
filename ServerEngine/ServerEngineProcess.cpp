@@ -156,7 +156,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         /* check metohd is allowed */
         if (!_M_checkMethod(serv, loca, req.getMethod())){
             udata->setState(WRITE_RESPONSE);
-            req.setErrorCode(403);//403 Forbidden: 클라이언트가 요청한 리소스에 접근할 권한이 없는 경우
+            req.setErrorCode(405);
             _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
             return ;
         }
@@ -221,6 +221,9 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         udata->setoutFile(outFile);
         udata->setRequestedFd(curr_event.ident);
 
+        if (req.getMethod().compare("HEAD") == 0)
+            res.setAddHead(false);
+
         /* body의 존재 유무에 따라서 body를 넣어주고 실행할지 바로 실행할지 결정한다 */
          if (req.getBody().size() != 0 && req.getMethod().compare("POST") == 0) {
             udata->setState(WRITE_CGI_BODY);
@@ -246,7 +249,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         /* check metohd is allowed */ 
         if (!_M_checkMethod(serv, loca, req.getMethod())){
             udata->setState(WRITE_RESPONSE);
-            req.setErrorCode(403);//403 Forbidden: 클라이언트가 요청한 리소스에 접근할 권한이 없는 경우
+            req.setErrorCode(405);
             _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
             return ;
         }
@@ -301,6 +304,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         std::cout << "server url is : " << serverUrl << std::endl;
         int fd = open(serverUrl.c_str(), O_RDONLY);
         if (fd != -1){
+            if (req.getMethod().compare("HEAD") == 0)
+                res.setAddHead(false);
             _m_clients[fd] = "";
             fcntl(fd, F_SETFL, O_NONBLOCK);
             udata->setState(READ_DOCS);
