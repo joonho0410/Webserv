@@ -155,6 +155,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     if (isCgi == true) {
         /* check metohd is allowed */
         if (!_M_checkMethod(serv, loca, req.getMethod())){
+            if(req.getMethod().compare("HEAD") == 0)
+                res.setAddHead(false);
             udata->setState(WRITE_RESPONSE);
             req.setErrorCode(405);
             _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
@@ -248,6 +250,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         std::cout << "url is : " << url << std::endl;
         /* check metohd is allowed */ 
         if (!_M_checkMethod(serv, loca, req.getMethod())){
+            if(req.getMethod().compare("HEAD") == 0)
+                res.setAddHead(false);
             udata->setState(WRITE_RESPONSE);
             req.setErrorCode(405);
             _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
