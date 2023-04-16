@@ -59,13 +59,14 @@ void ServerEngine::readRequest(struct kevent& curr_event){
     {
         case REQUEST_ERROR:
             std::cout << "REQEUST_ERROR OCCURED" << std::endl;
+            req.show_save();
             res.setErrorCode(req.getErrorCode());
             udata->setState(WRITE_RESPONSE);
             _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE , EV_ADD | EV_ONESHOT, 0, 0, udata);
             break;
         case REQUEST_FINISH:
             std::cout << "REQUEST_FINISH then req.show_save()" << std::endl;
-            // req.show_save();
+            req.show_save();
             _M_executeRequest(curr_event, req);
             break;
         default:
@@ -438,10 +439,11 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     int len = responseString.length();
     int bytes_written = write(curr_event.ident, ret, len);
 
-    // std::cout << "========== RESPONSE ===========" << std::endl;
-    // std::cout << ret << std::endl;
+    std::cout << "========== RESPONSE ===========" << std::endl;
+    std::cout << ret << std::endl;
 
     if (bytes_written < 0){
+        std::cout << "============= bytes_writen error =============== " << std::endl;
         udata->setState(WRITE_RESPONSE);
         req.setErrorCode(500);// 500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
         _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
