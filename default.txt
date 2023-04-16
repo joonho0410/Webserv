@@ -1,7 +1,7 @@
     server {
         listen       4242;
         server_name  localhost;
-        cgi          .php .sh .py .bla /cgi-bin/;
+        cgi          .php .sh .py .bla /cgi-bin;
 
         #charset koi8-r;
         client_max_body_size 1000;
@@ -23,9 +23,10 @@
             allow POST;
         }
         
-        location /directory/ {
-            root ./YoupiBanane;
-            index youpi.bad_extensions;
+        location /directory {
+            allow GET;
+            alias ./YoupiBanane/;
+            index youpi.bad_extension;
         }
         
         location /test/ {
@@ -39,7 +40,7 @@
             }
         }
         
-        location /cgi-bin/ {
+        location /cgi-bin {
             root .;
             index cgi_tester;
         }
