@@ -155,7 +155,7 @@ void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
 
     optVal = 1;
     optLinger.l_onoff = 1;
-    optLinger.l_linger = 0;
+    optLinger.l_linger = 1;
     
     if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
@@ -205,7 +205,6 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
             break ;
         }
         else {            
-            // buf[n] = '\0';
             std::string temp = std::string(buf, n);
             req.appendBuf(temp);
             req.parseBuf();
