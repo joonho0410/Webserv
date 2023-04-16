@@ -130,6 +130,7 @@ void Response::_M_initStatusCodeBodyMap(void){
 void    Response::ErrorCodeBody(int errorCode)
 {
     std::string body;
+
     body += "<!DOCTYPE html>\n";
     body += "<html>\n";
     body += "<head>\n";
@@ -144,7 +145,7 @@ void    Response::ErrorCodeBody(int errorCode)
     body += "   <p>" + _m_statusCodeMessageMap[errorCode] + "</p>\n";
     body += "</body>\n";
     body += "</html>";
-    // body += "\n\n";
+    body += "\n";
     appendResponse(body);
 }
 
