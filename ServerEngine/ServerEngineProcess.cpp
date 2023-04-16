@@ -410,14 +410,11 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     Request &req = udata->getRequest();
     std::string responseString;
 
-    // if (req.getErrorCode() == WRONG_PARSING)
-    // {
-    //     res.setResponseByErrorCode(WRONG_PARSING);
-    //     responseString = res.getResponse();
-    // }
     if (req.getErrorCode() == OK)
+    {
+        res.addBasicHeader();
         responseString = res.getResponse();
-        // std::string responseString = res.getResponse();
+    }
     else if (req.getErrorCode() == 404)
     {
         res.setResponseByErrorCode(404);
