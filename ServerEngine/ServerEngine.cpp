@@ -108,14 +108,28 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
     std::map <std::string, struct server_config_struct>::iterator end = server_block.location_block.end();
 
     for (; begin != end; ++begin){
-        size_t len = begin->first.length();
-        result = begin->first.compare(0, len, url, 0, len);
-        if (result == 0){
-            if (max < len){
-                valid = true;
-                max = len;
-                temp = url.substr(len);
-                ret = begin->second;
+        size_t locaLen = begin->first.length();
+        size_t urlLen = url.length();
+
+        if (locaLen < urlLen){
+            result = begin->first.compare(0, locaLen, url, 0, locaLen);
+            if (result == 0){
+                if (max < locaLen){
+                    valid = true;
+                    max = locaLen;
+                    temp = url.substr(locaLen);
+                    ret = begin->second;
+                }
+            }
+        } else {
+            result = begin->first.compare(0, urlLen, url, 0, urlLen);
+            if (result == 0){
+                if (max < urlLen){
+                    valid = true;
+                    max = urlLen;
+                    temp = url.substr(urlLen);
+                    ret = begin->second;
+                }
             }
         }
     }
