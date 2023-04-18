@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <sys/types.h>
 #include <sys/event.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -35,6 +36,7 @@ class ServerEngine
     private:
         struct server_config_struct _M_findServerPort(std::string ports, std::string server_name);
         struct server_config_struct _M_findLocationBlock(struct server_config_struct &_server_block, std::string &url);
+        struct server_config_struct _M_findDobleLocationBlock(struct server_config_struct &server_block, std::string &url);
         KqueueUdata* _M_makeUdata(int state);
         void _M_disconnectClient(struct kevent& , std::map<int, std::string>& clients);
         void _M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,

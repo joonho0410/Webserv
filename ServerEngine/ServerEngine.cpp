@@ -101,45 +101,6 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
         struct server_config_struct temp = {false};
         return temp;
     }
-    
-    // pos = url.find_first_of("/", 0);
-    // temp = url.substr(pos + 1);
-    // while (pos != std::string::npos)
-    // {
-        // std::cout << "strated " << std::endl;
-    //     str = url.substr(0, pos + 1);
-    //     std::cout << "pos : " << pos << std::endl;
-    //     std::cout << "temp : " << temp << std::endl;
-    //     std::cout << "str : " << str << std::endl;
-    //     if (server_block.location_block.find(str) == server_block.location_block.end())
-    //         break ;
-    //     ret = server_block.location_block[str];
-    //     valid = true;
-    //     pos = url.find_first_of("/", pos + 1);
-    //     if (pos == std::string::npos)
-    //     {
-    //         int result;
-    //         size_t max = 0;
-    //         std::map <std::string, struct server_config_struct>::iterator begin = server_block.location_block.begin();
-    //         std::map <std::string, struct server_config_struct>::iterator end = server_block.location_block.end();
-
-    //         for (; begin != end; ++begin){
-    //             size_t len = begin->first.length();
-    //             result = begin->first.compare(0, len, url, 0, len);
-    //             if (result == 0){
-    //                 if (max < len){
-    //                     valid = true;
-    //                     max = len;
-    //                     temp = url.substr(len);
-    //                     ret = begin->second;
-    //                 }
-    //             }
-    //         }
-    //         break;
-    //     }
-    //     temp = url.substr(pos + 1);        
-    // }
-    // // std::cout << "end " << std::endl;
 
     int result;
     size_t max = 0;
@@ -162,9 +123,17 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
     if (valid == false){
         struct server_config_struct temp = {false};
         return temp;
+    } else if (!ret.location_block.empty()){
+        struct server_config_struct tempRet;
+        std::string temp2 = temp;
+
+        tempRet = _M_findLocationBlock(ret, temp2);
+        if (tempRet.valid != false){
+            url = temp2;
+            return (tempRet);
+        }
     }
-    // std::cout << "temp : " << temp << std::endl;
-    // std::cout << "url : " << url << std::endl;
+
     url = temp;
     return (ret);
 }

@@ -25,8 +25,12 @@
         
         location /directory {
             allow GET;
-            alias ./YoupiBanane/;
-            index youpi.bad_extension;
+            alias ./YoupiBanane;
+            location /nop {
+                alias ./YoupiBanane/nop;
+                index /youpi.bad_extension;
+            }
+            index /youpi.bad_extension;
         }
         
         location /test/ {
