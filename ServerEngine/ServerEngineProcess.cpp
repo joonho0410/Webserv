@@ -270,7 +270,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 return ;
             }
         }
-        
         /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
@@ -307,7 +306,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         //     serverUrl = req.getUrl();
 
         std::cout << "server url is : " << serverUrl << std::endl;
-        int fd = open(serverUrl.c_str(), O_RDONLY);
+        int fd = _M_openDocs(serverUrl);
+        //int fd = open(serverUrl.c_str(), O_RDONLY);
         if (fd != -1){
             if (req.getMethod().compare("HEAD") == 0)
                 res.setAddHead(false);

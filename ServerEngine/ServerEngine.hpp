@@ -7,6 +7,7 @@
 
 #include <cstdlib>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/event.h>
 #include <sys/time.h>
 #include <sys/socket.h>
@@ -40,6 +41,7 @@ class ServerEngine
         void _M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
         bool _M_checkMethod(struct server_config_struct &, struct server_config_struct&, std::string method );
+        int _M_openDocs(std::string serverUrl);
 
         /* switch case */
         void _M_makeClientSocket(struct kevent*);

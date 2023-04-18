@@ -1,5 +1,25 @@
 #include "ServerEngine.hpp"
 
+int ServerEngine::_M_openDocs(std::string serverUrl)
+{
+    int fd;
+    struct stat file_stat;
+
+    if (stat(serverUrl.c_str(), &file_stat) == -1)
+        return (-1);
+    if (!S_ISREG(file_stat.st_mode))
+    {
+        close(fd);
+        return (-1);
+    }
+    
+    fd = open(serverUrl.c_str(), O_RDONLY);
+    if (fd == -1)
+        return (-1);
+
+    return (fd);
+}
+
 void ServerEngine::_M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
