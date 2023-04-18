@@ -408,6 +408,7 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
     /* 파일의 역할을 모두 했으니 여기서 close */
     fclose(udata->getinFile());
     fclose(udata->getoutFile());
+    req.setErrorCode(200);
     udata->setState(WRITE_RESPONSE);
     std::cout << "READ CGI RESULT END" << std::endl;
     _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
@@ -420,17 +421,13 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     Request &req = udata->getRequest();
     std::string responseString;
 
-    if (req.getErrorCode() == OK)
-    {
-        res.addBasicHeader();
-        responseString = res.getResponse();
-    }
-    else if (req.getErrorCode() == 404)
-    {
-        res.setResponseByErrorCode(404);
-        responseString = res.getResponse();
-    }
-    else
+    // if (req.getErrorCode() == OK)
+    // {
+    //     //res.addBasicHeader();
+    //     res.setResponseByErrorCode(req.getErrorCode());
+    //     responseString = res.getResponse();
+    // } 
+    // else
     {
         res.setResponseByErrorCode(req.getErrorCode());
         responseString = res.getResponse();
