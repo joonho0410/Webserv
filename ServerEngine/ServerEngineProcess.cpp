@@ -189,7 +189,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             bool checkIndex = false;
             std::string tempServerUrl = serverUrl;
 
-            if (*loca.key_and_value.find("index") != *loca.key_and_value.end()){
+            if (loca.key_and_value.find("index") != loca.key_and_value.end()){
                 std::cout << "find index " << std::endl;
                 std::vector<std::string> &temp = loca.key_and_value.find("index")->second;
                 for (int i = 0; i < temp.size(); ++i) {
@@ -271,6 +271,29 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             }
         }
         
+        /*check location is redirection block*/
+        if(loca.valid != false){
+            if (loca.key_and_value.find("return") != loca.key_and_value.end()){
+                std::vector< std::string > temp = loca.key_and_value["return"];
+                req.setErrorCode(std::atoi(temp[1].c_str()));
+                req.setRedirectUrl(temp[2]);
+                req.setErrorCode(301);
+                udata->setState(WRITE_RESPONSE);
+                _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+        } else {
+            if (serv.key_and_value.find("return") != serv.key_and_value.end()){
+                std::vector< std::string > temp = serv.key_and_value["return"];
+                req.setErrorCode(std::atoi(temp[1].c_str()));
+                req.setRedirectUrl(temp[2]);
+                req.setErrorCode(301);
+                udata->setState(WRITE_RESPONSE);
+                _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+        }
+        
         /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
@@ -282,7 +305,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             bool checkIndex = false;
             std::string tempServerUrl = serverUrl;
 
-            if (*loca.key_and_value.find("index") != *loca.key_and_value.end()){
+            if (loca.key_and_value.find("index") != loca.key_and_value.end()){
                 std::cout << "find index " << std::endl;
                 std::vector<std::string> &temp = loca.key_and_value.find("index")->second;
                 for (int i = 0; i < temp.size(); ++i) {

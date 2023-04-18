@@ -26,6 +26,7 @@ void Request::clean()
     _m_queryString.clear();
     _m_serverUrl.clear();
     _m_buf.clear();
+    _m_redirectUrl.clear();
 }
 
 bool Request::checkBodySize(struct server_config_struct config)
@@ -401,6 +402,7 @@ void Request::setErrorCode( int errorCode ){ _m_errorCode = errorCode; }
 void Request::setState(int state){ _m_state = state; }
 void Request::setBuf(std::string buf){ _m_buf = buf; }
 void Request::setServerUrl(std::string &buf){ _m_serverUrl = buf; }
+void Request::setRedirectUrl(std::string &buf){ _m_redirectUrl = buf; }
 
 /* getter */
 int Request::getState(){ return _m_state; }

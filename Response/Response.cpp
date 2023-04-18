@@ -106,6 +106,10 @@ void Response::_M_initStatusCodeMap(void) {
 	_m_statusCodeMap[200] = "OK";
 	_m_statusCodeMap[201] = "Created";
 	_m_statusCodeMap[204] = "No Content";
+    //Redirection
+    _m_statusCodeMap[301] = "Moved Permanently";
+    _m_statusCodeMap[302] = "Found";
+    //Error
 	_m_statusCodeMap[400] = "Bad Request";
 	_m_statusCodeMap[403] = "Forbidden";
 	_m_statusCodeMap[404] = "Not Found";
@@ -201,6 +205,10 @@ void Response::_M_parseAndSetHeader(std::string header) {
 void    Response::setResponseByErrorCode(int errorCode) {
     _m_errorCode = errorCode;
     setStatusLine(errorCode);
+    if (errorCode == 301){
+        _m_header["location"] = "https://www.naver.com";
+        return ;
+    }
     if (_m_addhead)
         ErrorCodeBody(errorCode);
     addBasicHeader();

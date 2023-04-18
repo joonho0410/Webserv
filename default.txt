@@ -28,6 +28,11 @@
             alias ./YoupiBanane/;
             index youpi.bad_extension;
         }
+
+        location /redirection {
+            root .;
+            return 301 https://www.naver.com;
+        }
         
         location /test/ {
             root .;

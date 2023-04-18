@@ -38,6 +38,7 @@ class Request
         void setState(int);
         void setErrorCode(int);
         void setServerUrl(std::string &);
+        void setRedirectUrl(std::string &);
         void setBody(void) { this->_m_body = "Sample Body";}
 
         /* getter */
@@ -54,10 +55,12 @@ class Request
 
     private:
         /* initialize need */
+        std::string _m_redirectUrl;
         size_t  _m_bodyMaxSize;
         size_t  _m_chunkedRemain;
         int     _m_state;
         int     _m_errorCode;
+        
 
         /* initialize with empty */
         std::map< std::string, std::vector<std::string> > _m_header;
