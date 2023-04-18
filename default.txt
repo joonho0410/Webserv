@@ -31,7 +31,7 @@
 
         location /redirection {
             root .;
-            return 301 https://google.com;
+            return 301 https://google.com$request_uri;
         }
         
         location /test/ {
