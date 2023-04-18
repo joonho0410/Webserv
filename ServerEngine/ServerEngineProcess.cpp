@@ -275,9 +275,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         if(loca.valid != false){
             if (loca.key_and_value.find("return") != loca.key_and_value.end()){
                 std::vector< std::string > temp = loca.key_and_value["return"];
-                req.setErrorCode(std::atoi(temp[1].c_str()));
-                req.setRedirectUrl(temp[2]);
-                req.setErrorCode(301);
+                req.setErrorCode(std::atoi(temp[0].c_str()));
+                req.setRedirectUrl(temp[1]);
                 udata->setState(WRITE_RESPONSE);
                 _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
@@ -444,17 +443,10 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     Request &req = udata->getRequest();
     std::string responseString;
 
-    // if (req.getErrorCode() == OK)
-    // {
-    //     //res.addBasicHeader();
-    //     res.setResponseByErrorCode(req.getErrorCode());
-    //     responseString = res.getResponse();
-    // } 
-    // else
-    {
-        res.setResponseByErrorCode(req.getErrorCode());
-        responseString = res.getResponse();
-    }
+    res.setRedirectUrl(req.getRedirectUrl());
+    res.setResponseByErrorCode(req.getErrorCode());
+    responseString = res.getResponse();
+
     const char* ret = responseString.c_str();
     int len = responseString.length();
     int bytes_written = write(curr_event.ident, ret, len);

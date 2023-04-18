@@ -51,6 +51,7 @@ class Request
         std::string getBuf();
         std::string getQueryString();
         std::string getServerUrl();
+        std::string getRedirectUrl();
         std::map< std::string, std::vector<std::string> >& getHeader();
 
     private:

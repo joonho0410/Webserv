@@ -413,4 +413,5 @@ std::string Request::getUrl(){ return _m_url; }
 std::string Request::getMethod(){ return _m_method;}
 std::string Request::getQueryString(){ return _m_queryString; }
 std::string Request::getServerUrl(){ return _m_serverUrl; }
+std::string Request::getRedirectUrl() { return _m_redirectUrl; }
 std::map< std::string, std::vector<std::string> > &Request::getHeader(){ return _m_header; }

@@ -31,7 +31,7 @@
 
         location /redirection {
             root .;
-            return 301 https://www.naver.com;
+            return 301 https://google.com;
         }
         
         location /test/ {

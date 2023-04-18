@@ -34,6 +34,10 @@ void Response::setAddHead(bool b){
     _m_addhead = b;
 }
 
+void Response::setRedirectUrl(std::string url){
+    _m_redirectUrl = url;
+}
+
 /* Getter */
 
 std::string Response::getStatusLine(){ return _m_statusLine;}
@@ -53,6 +57,11 @@ std::string Response::getResponse(){
     if (_m_addhead)
         response.append(_m_response);
     return response;
+}
+
+std::string Response::getRedirectUrl()
+{
+    return _m_redirectUrl;
 }
 
 /*Functions */
@@ -206,7 +215,7 @@ void    Response::setResponseByErrorCode(int errorCode) {
     _m_errorCode = errorCode;
     setStatusLine(errorCode);
     if (errorCode == 301){
-        _m_header["location"] = "https://www.naver.com";
+        addHeader("location", getRedirectUrl());
         return ;
     }
     if (_m_addhead)
