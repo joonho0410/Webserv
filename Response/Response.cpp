@@ -162,23 +162,6 @@ void    Response::ErrorCodeBody(int errorCode)
     appendResponse(body);
 }
 
-// Error Response Example
-// HTTP/1.1 404 Not Found
-// Content-Type: text/html; charset=UTF-8
-// Content-Length: 1245
-// Date: Wed, 13 Apr 2023 12:34:56 GMT
-
-// <!DOCTYPE html>
-// <html>
-// <head>
-// 	<title>404 Not Found</title>
-// </head>
-// <body>
-// 	<h1>404 Not Found</h1>
-// 	<p>The requested resource could not be found.</p>
-// </body>
-// </html>
-
 void Response::_M_parseAndSetHeader(std::string header) {
     bool    valid = true;
 

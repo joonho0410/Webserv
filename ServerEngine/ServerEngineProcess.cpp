@@ -444,7 +444,8 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     std::string responseString;
 
     res.setRedirectUrl(req.getRedirectUrl());
-    res.setResponseByErrorCode(req.getErrorCode());
+    if (req.getErrorCode() != OK)
+        res.setResponseByErrorCode(req.getErrorCode());
     responseString = res.getResponse();
 
     const char* ret = responseString.c_str();
