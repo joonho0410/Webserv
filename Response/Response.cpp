@@ -68,6 +68,8 @@ void Response::appendResponse(std::string &str){
 } 
 
 void Response::addHeader(std::string headerName, std::string content) {
+    for (int i = 0; i < headerName.size(); ++i)
+        headerName[i] = std::toupper(headerName[i]);
     _m_header[headerName] = content;
 }
 
@@ -77,11 +79,9 @@ void Response::addBasicHeader() {
 
     dt[std::strlen(dt) - 1] = '\0';
     setStatusLine(_m_errorCode);
-    _m_header["Server"] = "webserv/1.0";
-    _m_header["Date"] = std::string(dt);
-    _m_header["Date"] = _m_header["Date"].substr(0, _m_header["Date"].length() - 1);
-    _m_header["Content-Length"] = std::to_string(_m_response.length());
-    //Content-Type은 리소스 불러올때 적어줘야함
+    _m_header["SERVER"] = "webserv/1.0";
+    _m_header["DATE"] = std::string(dt);//.substr(0, std::string(dt).length() - 1);
+    _m_header["CONTENT-LENGTH"] = std::to_string(_m_response.length());
 }
 
 void Response::setResponseByCgiResult(std::string cgiResult) {
@@ -183,13 +183,15 @@ void Response::_M_parseAndSetHeader(std::string header) {
         std::string content;
         if (pos != std::string::npos) {
             headerName = (*it).substr(0, pos);
+            for (int i = 0; i < headerName.size(); ++i)
+                headerName[i] = std::toupper(headerName[i]);
             content = (*it).substr(pos + 1, (*it).length());
             headerMap[headerName] = content;
         } else {
             valid = false;
         }
     }
-    if (headerMap.find("Content-Type") != headerMap.end())
+    if (headerMap.find("CONTENT-TYPE") != headerMap.end())
         valid = false;
     
     if (valid == false)
