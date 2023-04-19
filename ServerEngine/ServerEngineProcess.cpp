@@ -384,7 +384,6 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
 
     int outFilefd = fileno(udata->getoutFile());
     int size = lseek(outFilefd, 0, SEEK_END);
-    std::cout << "HERE" << std::endl;
     if (size == -1){
         fclose(udata->getinFile());
         fclose(udata->getoutFile());
@@ -394,7 +393,6 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;        
     }
-    std::cout << "HERE" << std::endl;
     lseek(outFilefd, 0, SEEK_SET);
     buf = new char[size + 1];
     if (buf == 0){
@@ -407,7 +405,6 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         return ;
     }
     int readsize = read(outFilefd, buf, size);
-    std::cout << "HERE" << std::endl;
     if (readsize != size){
         fclose(udata->getinFile());
         fclose(udata->getoutFile());
@@ -418,18 +415,14 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;
     }
-    std::cout << "HERE" << std::endl;
     buf[readsize] = '\0';
     std::string str = std::string(buf);
 
-    std::cout << "HERE" << std::endl;
     udata->getResponse().setResponseByCgiResult(str);
-    std::cout << "HERE2" << std::endl;
     delete []buf;
     /* 파일의 역할을 모두 했으니 여기서 close */
     fclose(udata->getinFile());
     fclose(udata->getoutFile());
-    std::cout << "HERE3" << std::endl;
     req.setErrorCode(200);
     udata->setState(WRITE_RESPONSE);
     std::cout << "READ CGI RESULT END" << std::endl;
