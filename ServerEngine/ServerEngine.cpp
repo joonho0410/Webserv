@@ -8,10 +8,7 @@ int ServerEngine::_M_openDocs(std::string serverUrl)
     if (stat(serverUrl.c_str(), &file_stat) == -1)
         return (-1);
     if (!S_ISREG(file_stat.st_mode))
-    {
-        close(fd);
         return (-1);
-    }
     
     fd = open(serverUrl.c_str(), O_RDONLY);
     if (fd == -1)
