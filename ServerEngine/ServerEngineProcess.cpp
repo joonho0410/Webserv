@@ -445,7 +445,10 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
 
     res.setRedirectUrl(req.getRedirectUrl());
     if (req.getErrorCode() != OK)
-        res.setResponseByErrorCode(req.getErrorCode());
+    {
+        res.setErrorCode(req.getErrorCode());
+        res.setResponseByErrorCode();
+    }
     else
         res.addBasicHeader();
     responseString = res.getResponse();

@@ -34,6 +34,7 @@ class Response
         void setAddHead(bool b);
         void setRedirectUrl(std::string);
         
+        
         /* Getter */
         std::string     getStatusLine();
         std::map<std::string, std::string> getHeader();
@@ -46,5 +47,6 @@ class Response
         void addHeader(std::string headerName, std::string content);
         void addBasicHeader(); //Server, Date, Content-Length
         void setResponseByCgiResult(std::string cgiResult);
-        void setResponseByErrorCode(int errorCode);
+        void setResponseByErrorCode();
+        std::string    changeRedirectUrl(std::string url);
 };

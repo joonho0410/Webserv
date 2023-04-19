@@ -189,19 +189,18 @@ void Response::_M_parseAndSetHeader(std::string header) {
         valid = false;
     
     if (valid == false)
-        setResponseByErrorCode(500); // ERROR CODE DEFINE??
+        setResponseByErrorCode(); // ERROR CODE DEFINE??
     else
         _m_header = headerMap;
 }
 
-void    Response::setResponseByErrorCode(int errorCode) {
-    _m_errorCode = errorCode;
-    setStatusLine(errorCode);
-    if (errorCode == 301){
+void    Response::setResponseByErrorCode() {
+    setStatusLine(_m_errorCode);
+    if (_m_errorCode == 301 || _m_errorCode == 302){
         addHeader("location", getRedirectUrl());
         return ;
     }
     if (_m_addhead)
-        ErrorCodeBody(errorCode);
+        ErrorCodeBody(_m_errorCode);
     addBasicHeader();
 }
