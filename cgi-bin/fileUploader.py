@@ -4,6 +4,15 @@ import cgi
 import os
 import sys
 
+<<<<<<< HEAD
+=======
+print("HTTP/1.1 200 OK")
+print("accept-ranges: bytes")
+print("cache-control: public, max-age=0")
+print("content-type: text/html; charset=UTF-8")
+print("x-powered-by: Express\r\n")
+
+>>>>>>> e3992d18edcf14361f37fc9c88be4fc0ad6b2fa5
 
 # 파일이 저장될 디렉토리가 존재하지 않으면 생성합니다.
 file_storage_dir = "./FileStorage"
