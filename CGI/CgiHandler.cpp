@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/12 17:26:38 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/19 13:57:49 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,8 +90,6 @@ int CgiHandler::executeCgi() {
     char        **env = _M_get_envArr();
     std::string body = this->_m_request.getBody();
     const char  *script_name = this->_m_env.find("SCRIPT_NAME")->second.c_str();
-    int         stdinBackup = dup(STDIN);
-    int         stdoutBackup = dup(STDOUT);
     int         pid;
     std::string rv;
     

@@ -98,7 +98,7 @@ void Response::setResponseByCgiResult(std::string cgiResult) {
     std::string header;
     std::string body;
     size_t pos = cgiResult.find(delimiter);
-
+    
     if (pos != std::string::npos) {
         // delimiter found
         header = cgiResult.substr(0, pos);
@@ -171,9 +171,8 @@ void Response::_M_parseAndSetHeader(std::string header) {
     while (std::getline(lineStream, line, '\n')) {
         lines.push_back(line);
     }
-    _m_statusLine = *lines.begin();
     std::map<std::string, std::string> headerMap;
-    for (std::vector<std::string>::const_iterator it = std::next(lines.begin()); it != lines.end(); it++){
+    for (std::vector<std::string>::const_iterator it = lines.begin(); it != lines.end(); it++){
         size_t pos = it->find(":");
         std::string headerName;
         std::string content;

@@ -26,7 +26,7 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
         _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;
     }
-
+    std::cout << " =========next outfile ======== " << fileno(udata->getoutFile()) << std::endl;
     lseek(fileno(udata->getoutFile()), 0, SEEK_SET);
     udata->setState(READ_CGI_RESULT);
     _M_changeEvents(_m_change_list, fileno(udata->getoutFile()), EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
@@ -151,6 +151,12 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             }
         }
     }
+    if (loca.valid != false){
+        if (loca.key_and_value.find("cgi_pass") != loca.key_and_value.end()){
+            isCgi = true;
+            serverUrl = loca.key_and_value["cgi_pass"].front();
+        }
+    }
 
     /* START CGI_PROCESS */
     if (isCgi == true) {
@@ -228,7 +234,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             res.setAddHead(false);
 
         /* body의 존재 유무에 따라서 body를 넣어주고 실행할지 바로 실행할지 결정한다 */
-         if (req.getBody().size() != 0 && req.getMethod().compare("POST") == 0) {
+        std::cout << "============= METHOD ==============" << req.getMethod() << std::endl;
+         if (req.getBody().size() != 0 && (req.getMethod().compare("POST") == 0 || req.getMethod().compare("PUT") == 0) ) {
+            std::cout << "========== WRITE_CGI_BODY ===========" << std::endl;
+            std::cout << fileno(inFile) << "  " << fileno(outFile) << std::endl;
             udata->setState(WRITE_CGI_BODY);
             _M_changeEvents(_m_change_list, infd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         }
@@ -270,6 +279,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 return ;
             }
         }
+<<<<<<< HEAD
         
         /*check location is redirection block*/
         if(loca.valid != false){
@@ -293,6 +303,8 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             }
         }
         
+=======
+>>>>>>> origin/master
         /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
@@ -304,6 +316,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             bool checkIndex = false;
             std::string tempServerUrl = serverUrl;
 
+<<<<<<< HEAD
+=======
+            std::cout << "loca block name : " << loca.block_name  << std::endl; 
+>>>>>>> origin/master
             if (loca.key_and_value.find("index") != loca.key_and_value.end()){
                 std::cout << "find index " << std::endl;
                 std::vector<std::string> &temp = loca.key_and_value.find("index")->second;
@@ -324,13 +340,13 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             if (checkIndex == false){
                 std::cout << "index is not available" << std::endl;        
             }
-
         }// } else
         //     serverUrl = req.getUrl();
 
         std::cout << "server url is : " << serverUrl << std::endl;
-        int fd = open(serverUrl.c_str(), O_RDONLY);
-        if (fd != -1){
+        int fd = _M_openDocs(serverUrl);
+        //int fd = open(serverUrl.c_str(), O_RDONLY);
+        if (fd != -1 && fd != -2){
             if (req.getMethod().compare("HEAD") == 0)
                 res.setAddHead(false);
             _m_clients[fd] = "";
@@ -338,15 +354,21 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             udata->setState(READ_DOCS);
             udata->setRequestedFd(curr_event.ident);
             _M_changeEvents(_m_change_list, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
-        }
-        else{
-            // open error == 404 error //
+            return ;
+        } else if (fd == -2){
             std::cout << "open error" << std::endl;
             req.setErrorCode(404);
             udata->setState(WRITE_RESPONSE);
             _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
-            // _M_disconnectClient(curr_event, _m_clients);
+            return ;
         }
+        // open error == 404 error //
+        std::cout << "open error" << std::endl;
+        req.setErrorCode(404);
+        udata->setState(WRITE_RESPONSE);
+        _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;
+        // _M_disconnectClient(curr_event, _m_clients);
     }                            
     /* GET POST METHOD SERVING CGI */
 }

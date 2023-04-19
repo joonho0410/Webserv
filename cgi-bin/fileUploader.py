@@ -4,15 +4,6 @@ import cgi
 import os
 import sys
 
-print("HTTP/1.1 200 OK")
-print("accept-ranges: bytes")
-print("cache-control: public, max-age=0")
-print("content-length: 200")
-print("content-type: text/html; charset=UTF-8")
-print("date: Wed, 04 Jul 2018 01:42:11 GMT")
-print("last-modified: Wed, 04 Jul 2018 00:40:17 GMT")
-print("x-powered-by: Express\r\n")
-
 
 # 파일이 저장될 디렉토리가 존재하지 않으면 생성합니다.
 file_storage_dir = "./FileStorage"

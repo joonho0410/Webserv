@@ -1,5 +1,22 @@
 #include "ServerEngine.hpp"
 
+int ServerEngine::_M_openDocs(std::string serverUrl)
+{
+    int fd;
+    struct stat file_stat;
+
+    if (stat(serverUrl.c_str(), &file_stat) == -1)
+        return (-1);
+    if (!S_ISREG(file_stat.st_mode))
+        return (-2);
+    
+    fd = open(serverUrl.c_str(), O_RDONLY);
+    if (fd == -1)
+        return (-1);
+
+    return (fd);
+}
+
 void ServerEngine::_M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
@@ -101,45 +118,6 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
         struct server_config_struct temp = {false};
         return temp;
     }
-    
-    // pos = url.find_first_of("/", 0);
-    // temp = url.substr(pos + 1);
-    // while (pos != std::string::npos)
-    // {
-        // std::cout << "strated " << std::endl;
-    //     str = url.substr(0, pos + 1);
-    //     std::cout << "pos : " << pos << std::endl;
-    //     std::cout << "temp : " << temp << std::endl;
-    //     std::cout << "str : " << str << std::endl;
-    //     if (server_block.location_block.find(str) == server_block.location_block.end())
-    //         break ;
-    //     ret = server_block.location_block[str];
-    //     valid = true;
-    //     pos = url.find_first_of("/", pos + 1);
-    //     if (pos == std::string::npos)
-    //     {
-    //         int result;
-    //         size_t max = 0;
-    //         std::map <std::string, struct server_config_struct>::iterator begin = server_block.location_block.begin();
-    //         std::map <std::string, struct server_config_struct>::iterator end = server_block.location_block.end();
-
-    //         for (; begin != end; ++begin){
-    //             size_t len = begin->first.length();
-    //             result = begin->first.compare(0, len, url, 0, len);
-    //             if (result == 0){
-    //                 if (max < len){
-    //                     valid = true;
-    //                     max = len;
-    //                     temp = url.substr(len);
-    //                     ret = begin->second;
-    //                 }
-    //             }
-    //         }
-    //         break;
-    //     }
-    //     temp = url.substr(pos + 1);        
-    // }
-    // // std::cout << "end " << std::endl;
 
     int result;
     size_t max = 0;
@@ -147,14 +125,28 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
     std::map <std::string, struct server_config_struct>::iterator end = server_block.location_block.end();
 
     for (; begin != end; ++begin){
-        size_t len = begin->first.length();
-        result = begin->first.compare(0, len, url, 0, len);
-        if (result == 0){
-            if (max < len){
-                valid = true;
-                max = len;
-                temp = url.substr(len);
-                ret = begin->second;
+        size_t locaLen = begin->first.length();
+        size_t urlLen = url.length();
+
+        if (locaLen < urlLen){
+            result = begin->first.compare(0, locaLen, url, 0, locaLen);
+            if (result == 0){
+                if (max < locaLen){
+                    valid = true;
+                    max = locaLen;
+                    temp = url.substr(locaLen);
+                    ret = begin->second;
+                }
+            }
+        } else {
+            result = begin->first.compare(0, urlLen, url, 0, urlLen);
+            if (result == 0){
+                if (max < urlLen){
+                    valid = true;
+                    max = urlLen;
+                    temp = url.substr(urlLen);
+                    ret = begin->second;
+                }
             }
         }
     }
@@ -162,9 +154,17 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
     if (valid == false){
         struct server_config_struct temp = {false};
         return temp;
+    } else if (!ret.location_block.empty()){
+        struct server_config_struct tempRet;
+        std::string temp2 = temp;
+
+        tempRet = _M_findLocationBlock(ret, temp2);
+        if (tempRet.valid != false){
+            url = temp2;
+            return (tempRet);
+        }
     }
-    // std::cout << "temp : " << temp << std::endl;
-    // std::cout << "url : " << url << std::endl;
+
     url = temp;
     return (ret);
 }
@@ -376,7 +376,7 @@ void ServerEngine::start_kqueue()
             /* Write Event */
             else if (curr_event->filter == EVFILT_WRITE) {
                 KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event->udata);
-                std::cout << "WRITE EVENT IS OCCURED " << std::endl;
+                std::cout << curr_event->ident << " : WRITE EVENT IS OCCURED " << std::endl;
 
                 switch(udata->getState()) {
                     case WRITE_RESPONSE:    writeResponse(*curr_event); break;

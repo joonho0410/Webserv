@@ -141,7 +141,7 @@ void Request::_M_parseStartLine(size_t n)
     line = _m_buf.substr(0, n);
     keyEnd = line.find_first_of(" ", keyStart);
     key = line.substr(keyStart, keyEnd - keyStart);
-    if (! ((key.compare("GET") == 0) || (key.compare("POST") == 0) || (key.compare("DELETE") == 0 ) || (key.compare("HEAD") == 0)) )
+    if (! ((key.compare("GET") == 0) || (key.compare("POST") == 0) || (key.compare("DELETE") == 0 ) || (key.compare("HEAD") == 0) || (key.compare("Put"))) )
     {
         for (int i = 0; i < key.size(); ++i)
         {
@@ -328,6 +328,8 @@ void Request::_M_parseBodyChunked(size_t CRLF)
                 return ;
             }
             if (!ft_ishexdigit(length)){
+                std::cout << length;
+                std::cout << "is not hex digit " << std::endl;
                 _m_state = REQUEST_ERROR;
                 _m_errorCode = WRONG_BODY;
                 return ;
@@ -336,6 +338,7 @@ void Request::_M_parseBodyChunked(size_t CRLF)
             _m_chunkedRemain = static_cast<size_t>(decimalNum);
 
             if (*endPtr != '\0') {//    strtol error
+                std::cout << "16 to 10 error" << std::endl;
                 _m_state = REQUEST_ERROR;
                 _m_errorCode = WRONG_BODY;
                 return ;

@@ -8,7 +8,7 @@ void ft_toupper(std::string &key)
 
 bool ft_ishexdigit(std::string &str)
 {
-    if (str.find_first_not_of("0123456789ABCDEF") != std::string::npos)
+    if (str.find_first_not_of("0123456789abcde") != std::string::npos)
         return false;
     return true;
 }
