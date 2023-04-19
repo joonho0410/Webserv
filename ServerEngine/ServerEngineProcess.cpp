@@ -279,7 +279,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 return ;
             }
         }
-<<<<<<< HEAD
         
         /*check location is redirection block*/
         if(loca.valid != false){
@@ -303,8 +302,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             }
         }
         
-=======
->>>>>>> origin/master
         /* SERVING STATIC HTML FILE && NEED CHECK METHOD IS ALLOWED */
         if (loca.key_and_value.find("alias") != loca.key_and_value.end())
             serverUrl = *loca.key_and_value["alias"].begin() + url;
@@ -316,10 +313,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             bool checkIndex = false;
             std::string tempServerUrl = serverUrl;
 
-<<<<<<< HEAD
-=======
-            std::cout << "loca block name : " << loca.block_name  << std::endl; 
->>>>>>> origin/master
             if (loca.key_and_value.find("index") != loca.key_and_value.end()){
                 std::cout << "find index " << std::endl;
                 std::vector<std::string> &temp = loca.key_and_value.find("index")->second;
