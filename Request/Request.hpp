@@ -32,13 +32,14 @@ class Request
         void parseBuf();
         bool checkValid();
         bool checkBodySize(struct server_config_struct);
+        std::string    changeRedirectUrl(std::string url);
 
         /* setter */
         void setBuf(std::string buf);
         void setState(int);
         void setErrorCode(int);
         void setServerUrl(std::string &);
-        void setRedirectUrl(std::string &);
+        void setRedirectUrl(std::string);
         void setBody(void) { this->_m_body = "Sample Body";}
 
         /* getter */

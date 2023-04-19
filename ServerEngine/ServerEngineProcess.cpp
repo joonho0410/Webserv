@@ -276,7 +276,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             if (loca.key_and_value.find("return") != loca.key_and_value.end()){
                 std::vector< std::string > temp = loca.key_and_value["return"];
                 req.setErrorCode(std::atoi(temp[0].c_str()));
-                req.setRedirectUrl(temp[1]);
+                req.setRedirectUrl(req.changeRedirectUrl(temp[1]));
                 udata->setState(WRITE_RESPONSE);
                 _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;

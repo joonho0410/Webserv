@@ -104,6 +104,29 @@ void Request::parseBuf()
     }
 }
 
+std::string    Request::changeRedirectUrl(std::string url)
+{
+    std::size_t pos;
+    std::size_t next_pos;
+    std::string var = "";
+    std::string changedUrl = "";
+    pos = url.find("$");
+    if (pos == std::string::npos)
+        return url;
+    changedUrl = url.substr(0, pos);
+    while (1)
+    {
+        next_pos = url.find("$", pos + 1);
+        var = url.substr(pos, next_pos);
+        if (var == "$request_uri")
+            changedUrl += getUrl();
+        if (next_pos == std::string::npos)
+            break ;
+        pos = next_pos;
+    }
+    return changedUrl;
+}
+
 void Request::_M_parseStartLine(size_t n)
 {
     size_t  keyStart = 0;
@@ -402,7 +425,7 @@ void Request::setErrorCode( int errorCode ){ _m_errorCode = errorCode; }
 void Request::setState(int state){ _m_state = state; }
 void Request::setBuf(std::string buf){ _m_buf = buf; }
 void Request::setServerUrl(std::string &buf){ _m_serverUrl = buf; }
-void Request::setRedirectUrl(std::string &buf){ _m_redirectUrl = buf; }
+void Request::setRedirectUrl(std::string buf){ _m_redirectUrl = buf; }
 
 /* getter */
 int Request::getState(){ return _m_state; }
