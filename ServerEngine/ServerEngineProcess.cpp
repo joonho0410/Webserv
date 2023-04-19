@@ -26,7 +26,7 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
         _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;
     }
-
+    std::cout << " =========next outfile ======== " << fileno(udata->getoutFile()) << std::endl;
     lseek(fileno(udata->getoutFile()), 0, SEEK_SET);
     udata->setState(READ_CGI_RESULT);
     _M_changeEvents(_m_change_list, fileno(udata->getoutFile()), EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
@@ -151,6 +151,12 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             }
         }
     }
+    if (loca.valid != false){
+        if (loca.key_and_value.find("cgi_pass") != loca.key_and_value.end()){
+            isCgi = true;
+            serverUrl = loca.key_and_value["cgi_pass"].front();
+        }
+    }
 
     /* START CGI_PROCESS */
     if (isCgi == true) {
@@ -228,7 +234,10 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             res.setAddHead(false);
 
         /* body의 존재 유무에 따라서 body를 넣어주고 실행할지 바로 실행할지 결정한다 */
-         if (req.getBody().size() != 0 && req.getMethod().compare("POST") == 0) {
+        std::cout << "============= METHOD ==============" << req.getMethod() << std::endl;
+         if (req.getBody().size() != 0 && (req.getMethod().compare("POST") == 0 || req.getMethod().compare("PUT") == 0) ) {
+            std::cout << "========== WRITE_CGI_BODY ===========" << std::endl;
+            std::cout << fileno(inFile) << "  " << fileno(outFile) << std::endl;
             udata->setState(WRITE_CGI_BODY);
             _M_changeEvents(_m_change_list, infd,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         }
@@ -308,7 +317,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         std::cout << "server url is : " << serverUrl << std::endl;
         int fd = _M_openDocs(serverUrl);
         //int fd = open(serverUrl.c_str(), O_RDONLY);
-        if (fd != -1){
+        if (fd != -1 && fd != -2){
             if (req.getMethod().compare("HEAD") == 0)
                 res.setAddHead(false);
             _m_clients[fd] = "";
@@ -317,8 +326,13 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             udata->setRequestedFd(curr_event.ident);
             _M_changeEvents(_m_change_list, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
             return ;
+        } else if (fd == -2){
+            std::cout << "open error" << std::endl;
+            req.setErrorCode(404);
+            udata->setState(WRITE_RESPONSE);
+            _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+            return ;
         }
-       
         // open error == 404 error //
         std::cout << "open error" << std::endl;
         req.setErrorCode(404);
@@ -370,6 +384,7 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
 
     int outFilefd = fileno(udata->getoutFile());
     int size = lseek(outFilefd, 0, SEEK_END);
+    std::cout << "HERE" << std::endl;
     if (size == -1){
         fclose(udata->getinFile());
         fclose(udata->getoutFile());
@@ -379,6 +394,7 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;        
     }
+    std::cout << "HERE" << std::endl;
     lseek(outFilefd, 0, SEEK_SET);
     buf = new char[size + 1];
     if (buf == 0){
@@ -391,6 +407,7 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         return ;
     }
     int readsize = read(outFilefd, buf, size);
+    std::cout << "HERE" << std::endl;
     if (readsize != size){
         fclose(udata->getinFile());
         fclose(udata->getoutFile());
@@ -401,14 +418,18 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;
     }
+    std::cout << "HERE" << std::endl;
     buf[readsize] = '\0';
     std::string str = std::string(buf);
 
+    std::cout << "HERE" << std::endl;
     udata->getResponse().setResponseByCgiResult(str);
+    std::cout << "HERE2" << std::endl;
     delete []buf;
     /* 파일의 역할을 모두 했으니 여기서 close */
     fclose(udata->getinFile());
     fclose(udata->getoutFile());
+    std::cout << "HERE3" << std::endl;
     req.setErrorCode(200);
     udata->setState(WRITE_RESPONSE);
     std::cout << "READ CGI RESULT END" << std::endl;

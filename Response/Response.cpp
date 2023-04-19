@@ -89,7 +89,7 @@ void Response::setResponseByCgiResult(std::string cgiResult) {
     std::string header;
     std::string body;
     size_t pos = cgiResult.find(delimiter);
-
+    
     if (pos != std::string::npos) {
         // delimiter found
         header = cgiResult.substr(0, pos);

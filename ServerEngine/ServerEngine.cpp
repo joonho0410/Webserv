@@ -10,7 +10,7 @@ int ServerEngine::_M_openDocs(std::string serverUrl)
     if (!S_ISREG(file_stat.st_mode))
     {
         close(fd);
-        return (-1);
+        return (-2);
     }
     
     fd = open(serverUrl.c_str(), O_RDONLY);
@@ -379,7 +379,7 @@ void ServerEngine::start_kqueue()
             /* Write Event */
             else if (curr_event->filter == EVFILT_WRITE) {
                 KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event->udata);
-                std::cout << "WRITE EVENT IS OCCURED " << std::endl;
+                std::cout << curr_event->ident << " : WRITE EVENT IS OCCURED " << std::endl;
 
                 switch(udata->getState()) {
                     case WRITE_RESPONSE:    writeResponse(*curr_event); break;
