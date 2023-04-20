@@ -24,6 +24,7 @@ enum kqueue_process
     READ_REQUEST,
     READ_DOCS,
     READ_CGI_RESULT,
+    WRITE_FILE,
     WRITE_RESPONSE,
     WRITE_CGI_BODY,
     EXCUTE_CGI

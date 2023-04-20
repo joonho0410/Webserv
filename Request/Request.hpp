@@ -38,6 +38,7 @@ class Request
         void setBuf(std::string buf);
         void setState(int);
         void setErrorCode(int);
+        void setIsCgi(bool isCgi);
         void setServerUrl(std::string &);
         void setRedirectUrl(std::string);
         void setBody(void) { this->_m_body = "Sample Body";}
@@ -45,6 +46,7 @@ class Request
         /* getter */
         int getErrorCode();
         int getState();
+        bool getIsCgi();
 
         std::string getBody();
         std::string getUrl();
@@ -63,7 +65,7 @@ class Request
         bool    _m_isChunkedProcess;
         int     _m_state;
         int     _m_errorCode;
-        
+        bool    _m_isCgi;
 
         /* initialize with empty */
         std::map< std::string, std::vector<std::string> > _m_header;
