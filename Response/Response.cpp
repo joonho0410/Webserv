@@ -155,24 +155,24 @@ void Response::_M_initStatusCodeBodyMap(void){
 
 void    Response::ErrorCodeBody(int errorCode)
 {
-    // std::string body;
+    std::string body;
 
-    // body += "<!DOCTYPE html>\n";
-    // body += "<html>\n";
-    // body += "<head>\n";
-    // body += "   <title>" + std::to_string(errorCode)
-    //     + " " + _m_statusCodeMap[errorCode]
-    //     + "</title>\n";
-    // body += "</head>\n";
-    // body += "<body>\n";
-    // body += "   <h1>"+ std::to_string(errorCode)
-    //     + " " + _m_statusCodeMap[errorCode]
-    //     + "</h1>\n";
-    // body += "   <p>" + _m_statusCodeMessageMap[errorCode] + "</p>\n";
-    // body += "</body>\n";
-    // body += "</html>";
-    // body += "\n";
-    // appendResponse(body);
+    body += "<!DOCTYPE html>\n";
+    body += "<html>\n";
+    body += "<head>\n";
+    body += "   <title>" + std::to_string(errorCode)
+        + " " + _m_statusCodeMap[errorCode]
+        + "</title>\n";
+    body += "</head>\n";
+    body += "<body>\n";
+    body += "   <h1>"+ std::to_string(errorCode)
+        + " " + _m_statusCodeMap[errorCode]
+        + "</h1>\n";
+    body += "   <p>" + _m_statusCodeMessageMap[errorCode] + "</p>\n";
+    body += "</body>\n";
+    body += "</html>";
+    body += "\n";
+    appendResponse(body);
 }
 
 void Response::_M_parseAndSetHeader(std::string header) {
