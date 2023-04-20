@@ -61,7 +61,6 @@
         }
         
         location /cgi-bin/ {
-            root .;
             cgi_pass ./cgi-bin/youpi.bla;
         }
     }

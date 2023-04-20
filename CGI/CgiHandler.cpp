@@ -59,6 +59,7 @@ void    CgiHandler::_M_initEnv(Request &request )
     this->_m_env["SCRIPT_NAME"] = request.getServerUrl();
     this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
+    this->_m_env["X-SECRET-HEADER-FOR-TEST"] = "1";
     
     std::cout << "init Env is DONE " << std::endl;
 }

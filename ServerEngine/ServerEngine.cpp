@@ -203,8 +203,8 @@ void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
     if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
     std::cout << "accept new client: " << client_socket << std::endl;
-    if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
-        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    // if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
+    //     exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
         exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     fcntl(client_socket, F_SETFL, O_NONBLOCK);
