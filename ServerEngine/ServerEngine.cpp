@@ -30,9 +30,15 @@ void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, 
 {
     std::cout << "client disconnected: " << curr_event.ident << std::endl;
     close(curr_event.ident);
-    clients.erase(curr_event.ident);
-    if (curr_event.udata)
-        delete reinterpret_cast<KqueueUdata*> (curr_event.udata);
+    std::cout << "erase ident" << std::endl;
+    if (clients.find(curr_event.ident) != clients.end())
+        clients.erase(curr_event.ident);
+    std::cout << "erase udata" << std::endl;
+    if (curr_event.udata){
+        delete (reinterpret_cast<KqueueUdata*> (curr_event.udata));
+        curr_event.udata = 0;
+    }
+    std::cout << " done " << std::endl;
 }
 
 bool ServerEngine::_M_checkMethod(struct server_config_struct& serv, struct server_config_struct& loca, std::string method)
@@ -236,10 +242,10 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
             if (n < 0){
                 std::cerr << "client read error!" << std::endl;
                 std::cerr << "read out\n";
-                _M_disconnectClient(_curr_event, _m_clients);
+                return ;
             }
             std::cout << "read all ! " << std::endl;
-            break ;
+            return ;
         }
         else {            
             std::string temp = std::string(buf, n);

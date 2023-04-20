@@ -22,6 +22,7 @@
 
         location /post/body {
             allow POST;
+            client_max_body_size 100;
         }
         
         location /directory/ {
@@ -53,7 +54,7 @@
         
         location /cgi-bin/ {
             root .;
-            index cgi_tester;
+            cgi_pass ./cgi-bin/youpi.bla;
         }
     }
 

@@ -56,8 +56,10 @@ class Request
         /* initialize need */
         size_t  _m_bodyMaxSize;
         size_t  _m_chunkedRemain;
+        bool    _m_isChunkedProcess;
         int     _m_state;
         int     _m_errorCode;
+        
 
         /* initialize with empty */
         std::map< std::string, std::vector<std::string> > _m_header;

@@ -2,7 +2,9 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <unistd.h>
 #include <vector>
+#include "ParsingUtility.hpp"
 
 enum Response_erorr{
     RESPONSE_OK
@@ -12,6 +14,7 @@ class Response
 {
     private :
         int _m_errorCode;
+        int _m_totalSendedBytes;
         bool _m_addhead;
         std::map<int, std::string> _m_statusCodeMap;
         std::map<int, std::string> _m_statusCodeMessageMap;
@@ -33,6 +36,7 @@ class Response
         void setAddHead(bool b);
         
         /* Getter */
+        int&    getTotalSendedBytes();
         std::string     getStatusLine();
         std::map<std::string, std::string> getHeader();
         std::string     getResponse();

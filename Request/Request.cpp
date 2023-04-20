@@ -8,12 +8,14 @@ Request::Request()
     _m_state = READ_START_LINE;
     _m_errorCode = OK;
     _m_chunkedRemain = 0;
+    _m_isChunkedProcess = false;
 }
 
 void Request::clean()
 {
     _m_bodyMaxSize = 0;
     _m_chunkedRemain = 0;
+    _m_isChunkedProcess = false;
     _m_state = READ_START_LINE;
     _m_errorCode = OK;
 
@@ -191,9 +193,12 @@ void Request::show_save()
     std::cout << "========= show save ===========" <<std::endl;
     std::map< std::string, std::vector<std::string> >::iterator begin = _m_header.begin();
     std::map< std::string, std::vector<std::string> >::iterator end = _m_header.end();
-    std::cout << "method : " << _m_method << std::endl;
-    std::cout << "_m_url : " << _m_url << std::endl;
-    std::cout << "_m_body : " << _m_body << std::endl;
+    // std::cout << "method : " << _m_method << std::endl;
+    // std::cout << "_m_url : " << _m_url << std::endl;
+    // std::cout << "_m_body : " << _m_body << std::endl;
+     std::cout << "_m_body.size() : " << _m_body.size() << std::endl;
+    //std::cout << "_m_buf : " << _m_buf << std::endl;
+    std::cout << "_m_buf.size() " << _m_buf.size() << std::endl; 
     for(; begin != end; ++begin)
     {
         std::cout << "key : " << begin->first << std::endl;
@@ -263,10 +268,6 @@ void Request::_M_parseBody()
             _m_buf.clear();
             _m_state = REQUEST_FINISH;
         }
-        // std::cout << "need read len " << std::endl;
-        // std::cout << num << std::endl;
-        // std::cout << _m_body.size() << std::endl;
-        // std::cout << _m_buf.size() << std::endl;
     }
     catch (std::length_error &e)
     {
@@ -278,8 +279,8 @@ void Request::_M_parseBody()
 void Request::_M_parseBodyChunked(size_t CRLF)
 {
     std::cout << "_M_parseBodyChunked OCCURED " << std::endl;
-    std::cout << "_m_buf :: " << _m_buf << std::endl;
-    std::cout << "_m_buf size :: " << _m_buf.size() << std::endl;
+    // std::cout << "_m_buf :: " << _m_buf << std::endl;
+    // std::cout << "_m_buf size :: " << _m_buf.size() << std::endl;
     try {        
         size_t      bodyLen;
         size_t      lineStart = 0;
@@ -288,21 +289,37 @@ void Request::_M_parseBodyChunked(size_t CRLF)
         std::string chunked_body;
         char *endPtr;
         long len;
+        
         if (_m_state == REQUEST_ERROR || _m_buf.size() == 0)
             return ;
-            
-        if (_m_chunkedRemain != 0){//remain some read chunked body
-            chunked_body = _m_buf.substr(0, _m_chunkedRemain);
-            _m_chunkedRemain -= chunked_body.size();
-            _m_buf = _m_buf.substr(chunked_body.size());
+        if (_m_chunkedRemain != 0 && _m_isChunkedProcess ){//remain some read chunked body
+            if (CRLF >= _m_chunkedRemain){
+                chunked_body = _m_buf.substr(0, _m_chunkedRemain);
+                _m_buf = _m_buf.substr(CRLF + 2);
+                _m_chunkedRemain = 0;
+                _m_isChunkedProcess = false;
+            } else { // CRLF < _m_chunkedRemain
+                chunked_body = _m_buf;
+                _m_chunkedRemain -= _m_buf.length();
+                _m_buf = _m_buf.substr(0, CRLF);
+            }
             _M_appendBody(chunked_body);
-        } else if (CRLF != std::string::npos && _m_chunkedRemain == 0){ //accept new chunked length; 
+            return ;
+        } else if (_m_chunkedRemain == 0 && _m_isChunkedProcess) {// end 
             length = _m_buf.substr(0, CRLF);
-            if (length.empty()){
+            if (length.empty()) {
+                std::cout << "================================ chunked end ========================" << std::endl;
+                std::cout << "chunked size = " << _m_body.size() << std::endl;
                 _m_buf = _m_buf.substr(CRLF + 2);
                 _m_state = REQUEST_FINISH;
-                return ;
+                _m_isChunkedProcess = false;
+            } else {
+                _m_state = REQUEST_ERROR;
+                _m_isChunkedProcess = false;
             }
+            return ;
+        } else if (!(_m_isChunkedProcess)){ //accept new chunked length; 
+            length = _m_buf.substr(0, CRLF);
             if (!ft_ishexdigit(length)){
                 std::cout << length;
                 std::cout << "is not hex digit " << std::endl;
@@ -310,16 +327,19 @@ void Request::_M_parseBodyChunked(size_t CRLF)
                 _m_errorCode = WRONG_BODY;
                 return ;
             }
+            std::cout << "length :: " << length << std::endl;
             long decimalNum = strtol(length.c_str(), &endPtr, 16); // 16진수 문자열을 10진수로 변환
             _m_chunkedRemain = static_cast<size_t>(decimalNum);
-
+            std::cout << "_m_ chunked remain :: " << _m_chunkedRemain << std::endl;
             if (*endPtr != '\0') {//    strtol error
                 std::cout << "16 to 10 error" << std::endl;
                 _m_state = REQUEST_ERROR;
                 _m_errorCode = WRONG_BODY;
                 return ;
             }
+            _m_isChunkedProcess = true;
             _m_buf = _m_buf.substr(CRLF + 2);
+            return ;
         }
     }
     catch (std::length_error &e)

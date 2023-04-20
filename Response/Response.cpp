@@ -4,6 +4,7 @@
 Response::Response(){
     _m_errorCode = RESPONSE_OK;
     _m_addhead = true;
+    _m_totalSendedBytes = 0;
     _M_initStatusCodeMap();
     _M_initStatusCodeBodyMap();
 }
@@ -36,8 +37,8 @@ void Response::setAddHead(bool b){
 
 /* Getter */
 
+int&    Response::getTotalSendedBytes() { return _m_totalSendedBytes; }
 std::string Response::getStatusLine(){ return _m_statusLine;}
-
 std::map<std::string, std::string> Response::getHeader(){ return _m_header;}
 
 std::string Response::getResponse(){
@@ -47,9 +48,11 @@ std::string Response::getResponse(){
     for (std::map<std::string, std::string>::const_iterator it = this->_m_header.begin(); it != this->_m_header.end(); it++){
         std::string str = it->first + ": " + it->second;
         response.append(str);
-        response.append("\n");
+        response.append("\r\n");
     }
     response.append("\r\n");
+    std::cout << response ;
+    std::cout << _m_response.size() << std::endl;
     if (_m_addhead)
         response.append(_m_response);
     return response;
@@ -60,6 +63,7 @@ std::string Response::getResponse(){
 void Response::clean(){
     _m_errorCode = RESPONSE_OK;
     _m_addhead = true;
+    _m_totalSendedBytes = 0;
     _m_response.clear();
 }
 
@@ -75,17 +79,20 @@ void Response::addBasicHeader() {
     time_t now = time(0);
     char* dt = ctime(&now);
 
+    std::cout << "=============== add basic header ============== " << std::endl;
+    std::cout << _m_response.length() << std::endl;
     dt[std::strlen(dt) - 1] = '\0';
     setStatusLine(_m_errorCode);
     _m_header["Server"] = "webserv/1.0";
     _m_header["Date"] = std::string(dt);
     _m_header["Date"] = _m_header["Date"].substr(0, _m_header["Date"].length() - 1);
     _m_header["Content-Length"] = std::to_string(_m_response.length());
+    std::cout << _m_response.length() << std::endl;
     //Content-Type은 리소스 불러올때 적어줘야함
 }
 
 void Response::setResponseByCgiResult(std::string cgiResult) {
-    std::string delimiter = "\r\n";
+    std::string delimiter = "\r\n\r\n";
     std::string header;
     std::string body;
     size_t pos = cgiResult.find(delimiter);
@@ -93,10 +100,11 @@ void Response::setResponseByCgiResult(std::string cgiResult) {
     if (pos != std::string::npos) {
         // delimiter found
         header = cgiResult.substr(0, pos);
-        body = cgiResult.substr(pos + delimiter.length() + 1 , cgiResult.length());
+        // body = cgiResult.substr(pos + delimiter.length() , cgiResult.length());
     } else {
         // delimiter not found
     }
+    body = cgiResult.substr(pos + 4);
     _M_parseAndSetHeader(header); //set _m_header
     _m_response = body;
 }
@@ -129,24 +137,24 @@ void Response::_M_initStatusCodeBodyMap(void){
 
 void    Response::ErrorCodeBody(int errorCode)
 {
-    std::string body;
+    // std::string body;
 
-    body += "<!DOCTYPE html>\n";
-    body += "<html>\n";
-    body += "<head>\n";
-    body += "   <title>" + std::to_string(errorCode)
-        + " " + _m_statusCodeMap[errorCode]
-        + "</title>\n";
-    body += "</head>\n";
-    body += "<body>\n";
-    body += "   <h1>"+ std::to_string(errorCode)
-        + " " + _m_statusCodeMap[errorCode]
-        + "</h1>\n";
-    body += "   <p>" + _m_statusCodeMessageMap[errorCode] + "</p>\n";
-    body += "</body>\n";
-    body += "</html>";
-    body += "\n";
-    appendResponse(body);
+    // body += "<!DOCTYPE html>\n";
+    // body += "<html>\n";
+    // body += "<head>\n";
+    // body += "   <title>" + std::to_string(errorCode)
+    //     + " " + _m_statusCodeMap[errorCode]
+    //     + "</title>\n";
+    // body += "</head>\n";
+    // body += "<body>\n";
+    // body += "   <h1>"+ std::to_string(errorCode)
+    //     + " " + _m_statusCodeMap[errorCode]
+    //     + "</h1>\n";
+    // body += "   <p>" + _m_statusCodeMessageMap[errorCode] + "</p>\n";
+    // body += "</body>\n";
+    // body += "</html>";
+    // body += "\n";
+    // appendResponse(body);
 }
 
 // Error Response Example
@@ -182,15 +190,18 @@ void Response::_M_parseAndSetHeader(std::string header) {
         std::string content;
         if (pos != std::string::npos) {
             headerName = (*it).substr(0, pos);
+            ft_toupper(headerName);
+             std::cout << "header Name :" << headerName << std::endl;
             content = (*it).substr(pos + 1, (*it).length());
             headerMap[headerName] = content;
         } else {
             valid = false;
         }
     }
-    if (headerMap.find("Content-Type") != headerMap.end())
+    if (headerMap.find("CONTENT-TYPE") == headerMap.end()){
+        std::cout << "can't find content -type " << std::endl;
         valid = false;
-    
+    }
     if (valid == false)
         setResponseByErrorCode(500); // ERROR CODE DEFINE??
     else
@@ -200,7 +211,7 @@ void Response::_M_parseAndSetHeader(std::string header) {
 void    Response::setResponseByErrorCode(int errorCode) {
     _m_errorCode = errorCode;
     setStatusLine(errorCode);
-    if (_m_addhead)
-        ErrorCodeBody(errorCode);
+    if (_m_addhead && _m_response.empty())
+         ErrorCodeBody(errorCode);
     addBasicHeader();
 }

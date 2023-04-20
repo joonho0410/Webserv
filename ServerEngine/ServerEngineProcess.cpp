@@ -9,6 +9,10 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
     if (WIFEXITED(status)){
         if(WEXITSTATUS(status) != 0 ){
             std::cout << "process not ended with 0 " << WEXITSTATUS(status) << std::endl;// 비 정상 종료 이므로 50x error
+            if (_m_clients.find(fileno(udata->getinFile())) != _m_clients.end())
+                _m_clients.erase(fileno(udata->getinFile()));
+            if (_m_clients.find(fileno(udata->getoutFile())) != _m_clients.end())
+                _m_clients.erase(fileno(udata->getoutFile()));
             fclose(udata->getinFile());
             fclose(udata->getoutFile());
             
@@ -18,6 +22,10 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
             return ;
         }
     } else {
+        if (_m_clients.find(fileno(udata->getinFile())) != _m_clients.end())
+            _m_clients.erase(fileno(udata->getinFile()));
+        if (_m_clients.find(fileno(udata->getoutFile())) != _m_clients.end())
+            _m_clients.erase(fileno(udata->getoutFile()));
         fclose(udata->getinFile());
         fclose(udata->getoutFile());
         std::cout << "process ennded with some signal" << std::endl;
@@ -151,6 +159,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             }
         }
     }
+
     if (loca.valid != false){
         if (loca.key_and_value.find("cgi_pass") != loca.key_and_value.end()){
             isCgi = true;
@@ -384,18 +393,29 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
 
     int outFilefd = fileno(udata->getoutFile());
     int size = lseek(outFilefd, 0, SEEK_END);
+    
     if (size == -1){
+        if (_m_clients.find(fileno(udata->getinFile())) != _m_clients.end())
+            _m_clients.erase(fileno(udata->getinFile()));
+        if (_m_clients.find(fileno(udata->getoutFile())) != _m_clients.end())
+            _m_clients.erase(fileno(udata->getoutFile()));
         fclose(udata->getinFile());
         fclose(udata->getoutFile());
+        
 
         udata->setState(WRITE_RESPONSE);
         req.setErrorCode(500);// 500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
         _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;        
     }
+    
     lseek(outFilefd, 0, SEEK_SET);
     buf = new char[size + 1];
     if (buf == 0){
+        if (_m_clients.find(fileno(udata->getinFile())) != _m_clients.end())
+            _m_clients.erase(fileno(udata->getinFile()));
+        if (_m_clients.find(fileno(udata->getoutFile())) != _m_clients.end())
+            _m_clients.erase(fileno(udata->getoutFile()));
         fclose(udata->getinFile());
         fclose(udata->getoutFile());
 
@@ -405,7 +425,12 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         return ;
     }
     int readsize = read(outFilefd, buf, size);
+    
     if (readsize != size){
+        if (_m_clients.find(fileno(udata->getinFile())) != _m_clients.end())
+            _m_clients.erase(fileno(udata->getinFile()));
+        if (_m_clients.find(fileno(udata->getoutFile())) != _m_clients.end())
+            _m_clients.erase(fileno(udata->getoutFile()));
         fclose(udata->getinFile());
         fclose(udata->getoutFile());
         delete []buf;
@@ -415,14 +440,26 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
         _M_changeEvents(_m_change_list, udata->getRequestedFd(),  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         return ;
     }
-    buf[readsize] = '\0';
-    std::string str = std::string(buf);
-
+    
+    // buf[readsize] = '\0';
+    std::string str = std::string(buf, readsize);
+    std::cout << "================== CGI RESULT ================" <<std::endl;
+    // sleep(3);
+    // std::cout << str << std::endl;
+    // std::cout << "write str" << std::endl;
+    // sleep(3);
+    
     udata->getResponse().setResponseByCgiResult(str);
+    
     delete []buf;
     /* 파일의 역할을 모두 했으니 여기서 close */
+    if (_m_clients.find(fileno(udata->getinFile())) != _m_clients.end())
+            _m_clients.erase(fileno(udata->getinFile()));
+    if (_m_clients.find(fileno(udata->getoutFile())) != _m_clients.end())
+        _m_clients.erase(fileno(udata->getoutFile()));
     fclose(udata->getinFile());
     fclose(udata->getoutFile());
+    
     req.setErrorCode(200);
     udata->setState(WRITE_RESPONSE);
     std::cout << "READ CGI RESULT END" << std::endl;
@@ -435,31 +472,27 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     Response &res = udata->getResponse();
     Request &req = udata->getRequest();
     std::string responseString;
+    int &totalSendedBytes = res.getTotalSendedBytes();
+    int bytes_written = 0;
 
-    // if (req.getErrorCode() == OK)
-    // {
-    //     //res.addBasicHeader();
-    //     res.setResponseByErrorCode(req.getErrorCode());
-    //     responseString = res.getResponse();
-    // } 
-    // else
-    {
-        res.setResponseByErrorCode(req.getErrorCode());
-        responseString = res.getResponse();
-    }
+    res.setResponseByErrorCode(req.getErrorCode());
+    responseString = res.getResponse();
     const char* ret = responseString.c_str();
     int len = responseString.length();
-    int bytes_written = write(curr_event.ident, ret, len);
-
-    std::cout << "========== RESPONSE ===========" << std::endl;
-    std::cout << ret << std::endl;
-
-    if (bytes_written < 0){
-        std::cout << "============= bytes_writen error =============== " << std::endl;
-        udata->setState(WRITE_RESPONSE);
-        req.setErrorCode(500);// 500 Internal Server Error: 서버에서 처리 중에 예기치 않은 오류가 발생한 경우
-        _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
-        return ;
+    // std::cout << len << std::endl;
+    while (totalSendedBytes != len)
+    {
+        std::string temp = responseString.substr(totalSendedBytes);
+        const char* ret = temp.c_str();
+        bytes_written = write(curr_event.ident, ret, temp.length());
+        if (bytes_written < 0){
+            std::cout << "============= bytes_writen error =============== " << std::endl;
+            _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+            return ;
+        } else {
+            totalSendedBytes += bytes_written;
+            std::cout << totalSendedBytes << std::endl;
+        }
     }
     udata->clean();
     std::cout << "WRITE RESPONSE IS OCCURED " << std::endl;
