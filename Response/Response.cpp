@@ -35,6 +35,10 @@ void Response::setAddHead(bool b){
     _m_addhead = b;
 }
 
+void Response::setRedirectUrl(std::string url){
+    _m_redirectUrl = url;
+}
+
 /* Getter */
 
 int&    Response::getTotalSendedBytes() { return _m_totalSendedBytes; }
@@ -56,6 +60,16 @@ std::string Response::getResponse(){
     if (_m_addhead)
         response.append(_m_response);
     return response;
+}
+
+std::string Response::getRedirectUrl()
+{
+    return _m_redirectUrl;
+}
+
+int         Response::getErrorCode()
+{
+    return _m_errorCode;
 }
 
 /*Functions */
@@ -114,6 +128,10 @@ void Response::_M_initStatusCodeMap(void) {
 	_m_statusCodeMap[200] = "OK";
 	_m_statusCodeMap[201] = "Created";
 	_m_statusCodeMap[204] = "No Content";
+    //Redirection
+    _m_statusCodeMap[301] = "Moved Permanently";
+    _m_statusCodeMap[302] = "Found";
+    //Error
 	_m_statusCodeMap[400] = "Bad Request";
 	_m_statusCodeMap[403] = "Forbidden";
 	_m_statusCodeMap[404] = "Not Found";
@@ -157,23 +175,6 @@ void    Response::ErrorCodeBody(int errorCode)
     // appendResponse(body);
 }
 
-// Error Response Example
-// HTTP/1.1 404 Not Found
-// Content-Type: text/html; charset=UTF-8
-// Content-Length: 1245
-// Date: Wed, 13 Apr 2023 12:34:56 GMT
-
-// <!DOCTYPE html>
-// <html>
-// <head>
-// 	<title>404 Not Found</title>
-// </head>
-// <body>
-// 	<h1>404 Not Found</h1>
-// 	<p>The requested resource could not be found.</p>
-// </body>
-// </html>
-
 void Response::_M_parseAndSetHeader(std::string header) {
     bool    valid = true;
 
@@ -203,15 +204,18 @@ void Response::_M_parseAndSetHeader(std::string header) {
         valid = false;
     }
     if (valid == false)
-        setResponseByErrorCode(500); // ERROR CODE DEFINE??
+        setResponseByErrorCode(); // ERROR CODE DEFINE??
     else
         _m_header = headerMap;
 }
 
-void    Response::setResponseByErrorCode(int errorCode) {
-    _m_errorCode = errorCode;
-    setStatusLine(errorCode);
+void    Response::setResponseByErrorCode() {
+    setStatusLine(_m_errorCode);
+    if (_m_errorCode == 301 || _m_errorCode == 302){
+        addHeader("location", getRedirectUrl());
+        return ;
+    }
     if (_m_addhead && _m_response.empty())
-         ErrorCodeBody(errorCode);
+        ErrorCodeBody(_m_errorCode);
     addBasicHeader();
 }

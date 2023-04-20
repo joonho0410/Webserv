@@ -28,6 +28,7 @@ void Request::clean()
     _m_queryString.clear();
     _m_serverUrl.clear();
     _m_buf.clear();
+    _m_redirectUrl.clear();
 }
 
 bool Request::checkBodySize(struct server_config_struct config)
@@ -103,6 +104,29 @@ void Request::parseBuf()
                 break;     
         }
     }
+}
+
+std::string    Request::changeRedirectUrl(std::string url)
+{
+    std::size_t pos;
+    std::size_t next_pos;
+    std::string var = "";
+    std::string changedUrl = "";
+    pos = url.find("$");
+    if (pos == std::string::npos)
+        return url;
+    changedUrl = url.substr(0, pos);
+    while (1)
+    {
+        next_pos = url.find("$", pos + 1);
+        var = url.substr(pos, next_pos);
+        if (var == "$request_uri")
+            changedUrl += getUrl();
+        if (next_pos == std::string::npos)
+            break ;
+        pos = next_pos;
+    }
+    return changedUrl;
 }
 
 void Request::_M_parseStartLine(size_t n)
@@ -424,6 +448,7 @@ void Request::setErrorCode( int errorCode ){ _m_errorCode = errorCode; }
 void Request::setState(int state){ _m_state = state; }
 void Request::setBuf(std::string buf){ _m_buf = buf; }
 void Request::setServerUrl(std::string &buf){ _m_serverUrl = buf; }
+void Request::setRedirectUrl(std::string buf){ _m_redirectUrl = buf; }
 
 /* getter */
 int Request::getState(){ return _m_state; }
@@ -434,4 +459,5 @@ std::string Request::getUrl(){ return _m_url; }
 std::string Request::getMethod(){ return _m_method;}
 std::string Request::getQueryString(){ return _m_queryString; }
 std::string Request::getServerUrl(){ return _m_serverUrl; }
+std::string Request::getRedirectUrl() { return _m_redirectUrl; }
 std::map< std::string, std::vector<std::string> > &Request::getHeader(){ return _m_header; }

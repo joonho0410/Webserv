@@ -32,12 +32,14 @@ class Request
         void parseBuf();
         bool checkValid();
         bool checkBodySize(struct server_config_struct);
+        std::string    changeRedirectUrl(std::string url);
 
         /* setter */
         void setBuf(std::string buf);
         void setState(int);
         void setErrorCode(int);
         void setServerUrl(std::string &);
+        void setRedirectUrl(std::string);
         void setBody(void) { this->_m_body = "Sample Body";}
 
         /* getter */
@@ -50,10 +52,12 @@ class Request
         std::string getBuf();
         std::string getQueryString();
         std::string getServerUrl();
+        std::string getRedirectUrl();
         std::map< std::string, std::vector<std::string> >& getHeader();
 
     private:
         /* initialize need */
+        std::string _m_redirectUrl;
         size_t  _m_bodyMaxSize;
         size_t  _m_chunkedRemain;
         bool    _m_isChunkedProcess;

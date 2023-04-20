@@ -21,6 +21,7 @@ class Response
         std::string _m_statusLine; // ex) HTTP/1.1 200 OK
         std::map<std::string, std::string> _m_header;
         std::string _m_response;
+        std::string _m_redirectUrl;
 
         void _M_initStatusCodeMap(void);
         void _M_initStatusCodeBodyMap(void);
@@ -34,12 +35,16 @@ class Response
         void setStatusLine(int errorCode);
         void setHeader(std::map<std::string, std::string> header);
         void setAddHead(bool b);
+        void setRedirectUrl(std::string);
+        
         
         /* Getter */
         int&    getTotalSendedBytes();
         std::string     getStatusLine();
         std::map<std::string, std::string> getHeader();
         std::string     getResponse();
+        std::string     getRedirectUrl();
+        int             getErrorCode();
 
         /* Functions */
         void clean();
@@ -47,5 +52,6 @@ class Response
         void addHeader(std::string headerName, std::string content);
         void addBasicHeader(); //Server, Date, Content-Length
         void setResponseByCgiResult(std::string cgiResult);
-        void setResponseByErrorCode(int errorCode);
+        void setResponseByErrorCode();
+        std::string    changeRedirectUrl(std::string url);
 };
