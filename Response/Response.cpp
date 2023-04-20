@@ -64,6 +64,11 @@ std::string Response::getRedirectUrl()
     return _m_redirectUrl;
 }
 
+int         Response::getErrorCode()
+{
+    return _m_errorCode;
+}
+
 /*Functions */
 
 void Response::clean(){

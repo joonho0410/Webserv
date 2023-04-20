@@ -40,6 +40,7 @@ class Response
         std::map<std::string, std::string> getHeader();
         std::string     getResponse();
         std::string     getRedirectUrl();
+        int             getErrorCode();
 
         /* Functions */
         void clean();
