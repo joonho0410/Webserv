@@ -90,7 +90,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     std::string url;
     std::string serverUrl; // 실제로 서버부에서 찾아갈 주소 (root 이 존재할 경우 바뀐다.)
     Response& res = udata->getResponse();
-    bool        isCgi = false;
     bool        isBodyOk = true;
 
     /* HOST 는 반드시 필요한 헤더이므로 있는지 없는지 확인하는 작업이 필요하다 존재하지않으면 40x error 나중에 header parsing 이 끝나면 check_valid 함수를 새로 파서 체크하는게 더 예쁠듯?*/
@@ -136,7 +135,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         std::string temp;
 
         if (loca.block_name == cgi_value.back())
-            isCgi = true;
+            req.setIsCgi(true);
         else {
             temp = req.getUrl();
             for (int i = 0; i < cgi_value.size() - 1 ; ++ i){ 
@@ -145,7 +144,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 else if (temp.substr(temp.length() - cgi_value[i].length()) == cgi_value[i]) {
                     std::string temp = cgi_value.back();
                     loca = _M_findLocationBlock(serv, temp);
-                    isCgi = true;
+                    req.setIsCgi(true);
                     break ;
                 }
             }
@@ -153,13 +152,13 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     }
     if (loca.valid != false){
         if (loca.key_and_value.find("cgi_pass") != loca.key_and_value.end()){
-            isCgi = true;
+            req.setIsCgi(true);
             serverUrl = loca.key_and_value["cgi_pass"].front();
         }
     }
 
     /* START CGI_PROCESS */
-    if (isCgi == true) {
+    if (req.getIsCgi() == true) {
         /* check metohd is allowed */
         if (!_M_checkMethod(serv, loca, req.getMethod())){
             if(req.getMethod().compare("HEAD") == 0)
@@ -274,6 +273,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             else if (serv.key_and_value.find("client_max_body_size") != serv.key_and_value.end())
                 isBodyOk = req.checkBodySize(serv);
             if (isBodyOk == false){
+                udata->setState(WRITE_RESPONSE);
                 req.setErrorCode(413);//413 Payload Too Large: 클라이언트가 요청한 엔티티가 서버에서 처리할 수 있는 최대 크기를 초과한 경우
                 _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
@@ -311,35 +311,97 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             if (checkIndex == false){
                 std::cout << "index is not available" << std::endl;        
             }
-        }// } else
-        //     serverUrl = req.getUrl();
+        }
 
         std::cout << "server url is : " << serverUrl << std::endl;
-        int fd = _M_openDocs(serverUrl);
-        //int fd = open(serverUrl.c_str(), O_RDONLY);
-        if (fd != -1 && fd != -2){
-            if (req.getMethod().compare("HEAD") == 0)
-                res.setAddHead(false);
-            _m_clients[fd] = "";
-            fcntl(fd, F_SETFL, O_NONBLOCK);
-            udata->setState(READ_DOCS);
-            udata->setRequestedFd(curr_event.ident);
-            _M_changeEvents(_m_change_list, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
-            return ;
-        } else if (fd == -2){
+        if (req.getMethod() == "POST")
+        {
+            int fd = _M_openPOST(serverUrl);
+
+            if (fd >= 0)
+            {
+                fcntl(fd, F_SETFL, O_NONBLOCK);
+                udata->setState(WRITE_FILE);
+                udata->setRequestedFd(curr_event.ident);
+                _M_changeEvents(_m_change_list, fd, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+            else
+            {
+                std::cout << "POST open error" << std::endl;
+                res.setErrorCode(500);
+                udata->setState(WRITE_RESPONSE);
+                _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+        }
+        else if (req.getMethod() == "PUT")
+        {
+            int fd = _M_openPUT(serverUrl);
+
+            if (fd >= 0)
+            {
+                fcntl(fd, F_SETFL, O_NONBLOCK);
+                udata->setState(WRITE_FILE);
+                udata->setRequestedFd(curr_event.ident);
+                _M_changeEvents(_m_change_list, fd, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+            else if (fd == -1)
+            {
+                std::cout << "PUT open error" << std::endl;
+                res.setErrorCode(500);
+                udata->setState(WRITE_RESPONSE);
+                _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+            else if (fd == -2)
+            {
+                std::cout << "PUT open error" << std::endl;
+                res.setErrorCode(403);
+                udata->setState(WRITE_RESPONSE);
+                _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+        }
+        else if (req.getMethod() == "DELETE")
+        {
+            if (std::remove(serverUrl.c_str()) != 0)
+            {
+                res.setErrorCode(500);
+                udata->setState(WRITE_RESPONSE);
+                _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+        }
+        else
+        {
+            int fd = _M_openDocs(serverUrl);
+            //int fd = open(serverUrl.c_str(), O_RDONLY);
+            if (fd != -1 && fd != -2){
+                if (req.getMethod().compare("HEAD") == 0)
+                    res.setAddHead(false);
+                _m_clients[fd] = "";
+                fcntl(fd, F_SETFL, O_NONBLOCK);
+                udata->setState(READ_DOCS);
+                udata->setRequestedFd(curr_event.ident);
+                _M_changeEvents(_m_change_list, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            } else if (fd == -2){
+                std::cout << "open error" << std::endl;
+                req.setErrorCode(403);
+                udata->setState(WRITE_RESPONSE);
+                _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+            // open error == 404 error //
             std::cout << "open error" << std::endl;
             req.setErrorCode(404);
             udata->setState(WRITE_RESPONSE);
             _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
             return ;
-        }
-        // open error == 404 error //
-        std::cout << "open error" << std::endl;
-        req.setErrorCode(404);
-        udata->setState(WRITE_RESPONSE);
-        _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
-        return ;
         // _M_disconnectClient(curr_event, _m_clients);
+        }
     }                            
     /* GET POST METHOD SERVING CGI */
 }
@@ -370,6 +432,23 @@ void ServerEngine::readDocs(struct kevent& curr_event){
     }
     res.setErrorCode(200);
     res.addHeader("Content-type", "text/html; charset=UTF-8");
+    close(curr_event.ident);
+    udata->setState(WRITE_RESPONSE);
+    _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+}
+
+void ServerEngine::writeFile(struct kevent& curr_event){
+    KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+    Response &res = udata->getResponse();
+    Request &req = udata->getRequest();
+
+    if (write(curr_event.ident, req.getBody().c_str(), req.getBody().length() < 0)) {
+        res.setErrorCode(500);
+        udata->setState(WRITE_RESPONSE);
+        _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        close(close(curr_event.ident));
+    }
+    
     close(curr_event.ident);
     udata->setState(WRITE_RESPONSE);
     _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
@@ -436,17 +515,8 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     Request &req = udata->getRequest();
     std::string responseString;
 
-    // if (req.getErrorCode() == OK)
-    // {
-    //     //res.addBasicHeader();
-    //     res.setResponseByErrorCode(req.getErrorCode());
-    //     responseString = res.getResponse();
-    // } 
-    // else
-    {
-        res.setResponseByErrorCode(req.getErrorCode());
-        responseString = res.getResponse();
-    }
+    res.setResponseByErrorCode();
+    responseString = res.getResponse();
     const char* ret = responseString.c_str();
     int len = responseString.length();
     int bytes_written = write(curr_event.ident, ret, len);

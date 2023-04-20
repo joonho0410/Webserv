@@ -17,6 +17,27 @@ int ServerEngine::_M_openDocs(std::string serverUrl)
     return (fd);
 }
 
+int ServerEngine::_M_openPOST(std::string serverUrl)
+{
+    int fd = open(serverUrl.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
+             S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    return (fd);
+}
+
+int ServerEngine::_M_openPUT(std::string serverUrl)
+{
+    struct stat file_stat;
+
+	if (stat(serverUrl.c_str(), &file_stat) != 0)
+        return (-3);
+    if (!S_ISREG(file_stat.st_mode))
+        return (-2);
+
+    int fd = open(serverUrl.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
+             S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+    return (fd);
+}
+
 void ServerEngine::_M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata)
 {
@@ -379,6 +400,7 @@ void ServerEngine::start_kqueue()
                 std::cout << curr_event->ident << " : WRITE EVENT IS OCCURED " << std::endl;
 
                 switch(udata->getState()) {
+                    case WRITE_FILE:        writeFile(*curr_event); break;
                     case WRITE_RESPONSE:    writeResponse(*curr_event); break;
                     case EXCUTE_CGI:        excuteCgi(*curr_event); break;
                     case WRITE_CGI_BODY:    writeCgiBody(*curr_event); break;

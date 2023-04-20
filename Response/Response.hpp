@@ -43,5 +43,5 @@ class Response
         void addHeader(std::string headerName, std::string content);
         void addBasicHeader(); //Server, Date, Content-Length
         void setResponseByCgiResult(std::string cgiResult);
-        void setResponseByErrorCode(int errorCode);
+        void setResponseByErrorCode();
 };

@@ -192,15 +192,13 @@ void Response::_M_parseAndSetHeader(std::string header) {
         valid = false;
     
     if (valid == false)
-        setResponseByErrorCode(500); // ERROR CODE DEFINE??
+        setErrorCode(500); // ERROR CODE DEFINE??
     else
         _m_header = headerMap;
 }
 
-void    Response::setResponseByErrorCode(int errorCode) {
-    _m_errorCode = errorCode;
-    setStatusLine(errorCode);
+void    Response::setResponseByErrorCode() {
     if (_m_addhead)
-        ErrorCodeBody(errorCode);
+        ErrorCodeBody(_m_errorCode);
     addBasicHeader();
 }
