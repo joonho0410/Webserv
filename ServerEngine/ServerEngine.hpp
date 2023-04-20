@@ -5,6 +5,7 @@
 #include <map>
 #include <algorithm>
 
+#include <cstdio>
 #include <cstdlib>
 #include <sys/types.h>
 #include <sys/event.h>
@@ -42,7 +43,9 @@ class ServerEngine
         void _M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
         bool _M_checkMethod(struct server_config_struct &, struct server_config_struct&, std::string method );
-        int  _M_openDocs(std::string serverUrl);
+        int _M_openDocs(std::string serverUrl);
+        int _M_openPOST(std::string serverUrl);
+        int _M_openPUT(std::string serverUrl);
 
         /* switch case */
         void _M_makeClientSocket(struct kevent*);
@@ -55,6 +58,12 @@ class ServerEngine
         void readRequest(struct kevent& curr_event);
         void readDocs(struct kevent& curr_event);
         void readCgiResult(struct kevent& curr_event);
+
+        void postWrite(struct kevent& curr_event);
+        void putWrite(struct kevent& curr_envent);
+        void deleteFile(struct kevent& curr_envent);
+
+        void writeFile(struct kevent& curr_evenvt);
         void writeResponse(struct kevent& curr_event);
         void excuteCgi(struct kevent& curr_event);
         void writeCgiBody(struct kevent& curr_event);

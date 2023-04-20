@@ -9,6 +9,7 @@ Request::Request()
     _m_errorCode = OK;
     _m_chunkedRemain = 0;
     _m_isChunkedProcess = false;
+    _m_isCgi = false;
 }
 
 void Request::clean()
@@ -18,6 +19,7 @@ void Request::clean()
     _m_isChunkedProcess = false;
     _m_state = READ_START_LINE;
     _m_errorCode = OK;
+    _m_isCgi = false;
 
     _m_header.clear();
     _m_startLine.clear();
@@ -449,10 +451,12 @@ void Request::setState(int state){ _m_state = state; }
 void Request::setBuf(std::string buf){ _m_buf = buf; }
 void Request::setServerUrl(std::string &buf){ _m_serverUrl = buf; }
 void Request::setRedirectUrl(std::string buf){ _m_redirectUrl = buf; }
+void Request::setIsCgi(bool isCgi) { _m_isCgi = isCgi; }
 
 /* getter */
 int Request::getState(){ return _m_state; }
 int Request::getErrorCode(){ return _m_errorCode; }
+bool Request::getIsCgi() { return _m_isCgi; }
 std::string Request::getBuf(){ return _m_buf; }
 std::string Request::getBody(){ return _m_body; }
 std::string Request::getUrl(){ return _m_url; }
