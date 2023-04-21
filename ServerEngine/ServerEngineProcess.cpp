@@ -420,7 +420,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 return ;
             } else if (fd == -2){
                 std::cout << "open error" << std::endl;
-                req.setErrorCode(403);
+                req.setErrorCode(404);
                 udata->setState(WRITE_RESPONSE);
                 _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
