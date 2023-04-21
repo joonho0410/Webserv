@@ -260,6 +260,10 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
     while (1) {
         int n = read(_curr_event.ident, buf, sizeof(buf) - 1);
         if (n <= 0) {
+            if (n == 0){
+                req.setErrorCode(408);
+                return ;
+            }
             if (n < 0){
                 std::cerr << "client read error!" << std::endl;
                 std::cerr << "read out\n";
