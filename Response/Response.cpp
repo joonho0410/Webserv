@@ -192,7 +192,6 @@ void Response::_M_parseAndSetHeader(std::string header) {
         if (pos != std::string::npos) {
             headerName = (*it).substr(0, pos);
             ft_toupper(headerName);
-             std::cout << "header Name :" << headerName << std::endl;
             content = (*it).substr(pos + 1, (*it).length());
             headerMap[headerName] = content;
         } else {

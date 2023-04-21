@@ -221,14 +221,13 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                     }
                 }
             }
-
             if (checkIndex == false){
                 std::cout << "index is not available" << std::endl;        
             }
-
         }
         req.setServerUrl(serverUrl);
-
+        std::cout << "==================== server ulr ================== " << std::endl;
+        std::cout << serverUrl << std::endl;
         /* 함수 나누면 좋을듯? */
         FILE    *outFile = tmpfile();
         FILE    *inFile = tmpfile();
@@ -576,13 +575,15 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     int &totalSendedBytes = res.getTotalSendedBytes();
     int bytes_written = 0;
     
-    if (req.getErrorCode() != OK)
-        res.setErrorCode(req.getErrorCode());
-    res.setRedirectUrl(req.getRedirectUrl());
-    if (res.getErrorCode() != OK)
-        res.setResponseByErrorCode();
-    else
-        res.addBasicHeader();
+    if (totalSendedBytes == 0){
+        if (req.getErrorCode() != OK)
+            res.setErrorCode(req.getErrorCode());
+        res.setRedirectUrl(req.getRedirectUrl());
+        if (res.getErrorCode() != OK)
+            res.setResponseByErrorCode();
+        else
+            res.addBasicHeader();
+    }
     responseString = res.getResponse();
 
     const char* ret = responseString.c_str();
@@ -599,7 +600,7 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
             return ;
         } else {
             totalSendedBytes += bytes_written;
-            std::cout << totalSendedBytes << std::endl;
+            std::cout << "total sended bytes: " << totalSendedBytes << std::endl;
         }
     }
     udata->clean();

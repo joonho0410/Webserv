@@ -95,8 +95,6 @@ void Request::parseBuf()
             case READ_BODY:
                 std::cout << "READ_BODY OCCURED" << std::endl;
                 _M_parseBody();
-                // std::cout << "========= READ BODY =========" << std::endl;
-                // std::cout << _m_body.size() << std::endl;
                 break;
             case READ_BODY_CHUNKED:
                 _M_parseBodyChunked(findCRLF);
@@ -305,29 +303,28 @@ void Request::_M_parseBody()
 void Request::_M_parseBodyChunked(size_t CRLF)
 {
     std::cout << "_M_parseBodyChunked OCCURED " << std::endl;
-    // std::cout << "_m_buf :: " << _m_buf << std::endl;
-    // std::cout << "_m_buf size :: " << _m_buf.size() << std::endl;
     try {        
         size_t      bodyLen;
-        size_t      lineStart = 0;
-        size_t      lineEnd = 0;
         std::string length;
         std::string chunked_body;
         char *endPtr;
         long len;
-        
-        if (_m_state == REQUEST_ERROR || _m_buf.size() == 0)
+        std::cout << "CRLF : " << CRLF << std::endl;
+        std::cout << "_m_buf : " << _m_buf << std::endl;
+        std::cout << "_m_chunked remain : " << _m_chunkedRemain << std::endl;
+        std::cout << "_m_isChunkedProcess :" << _m_isChunkedProcess << std::endl;
+        if (_m_state == REQUEST_ERROR)
             return ;
         if (_m_chunkedRemain != 0 && _m_isChunkedProcess ){//remain some read chunked body
-            if (CRLF >= _m_chunkedRemain){
-                chunked_body = _m_buf.substr(0, _m_chunkedRemain);
+            if (CRLF + 2 >= _m_chunkedRemain){
+                chunked_body = _m_buf.substr(0, CRLF);
                 _m_buf = _m_buf.substr(CRLF + 2);
                 _m_chunkedRemain = 0;
                 _m_isChunkedProcess = false;
             } else { // CRLF < _m_chunkedRemain
                 chunked_body = _m_buf;
                 _m_chunkedRemain -= _m_buf.length();
-                _m_buf = _m_buf.substr(0, CRLF);
+                _m_buf = _m_buf.substr(0, CRLF + 2);
             }
             _M_appendBody(chunked_body);
             return ;
