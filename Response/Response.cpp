@@ -55,8 +55,6 @@ std::string Response::getResponse(){
         response.append("\r\n");
     }
     response.append("\r\n");
-    std::cout << response ;
-    std::cout << _m_response.size() << std::endl;
     if (_m_addhead)
         response.append(_m_response);
     return response;

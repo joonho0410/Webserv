@@ -20,7 +20,7 @@
             cgi_pass ./cgi-bin/fileUploader.py;
         }
 
-        location /post/body {
+        location /post_body {
             allow POST;
             client_max_body_size 100;
         }
