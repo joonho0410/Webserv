@@ -596,7 +596,8 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
         bytes_written = write(curr_event.ident, ret, temp.length());
         if (bytes_written < 0){
             std::cout << "============= bytes_writen error =============== " << std::endl;
-            _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+            // _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+            _M_disconnectClient(curr_event, _m_clients);
             return ;
         } else {
             totalSendedBytes += bytes_written;
