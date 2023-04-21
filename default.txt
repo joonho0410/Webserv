@@ -17,7 +17,7 @@
 
         location /put_test/ {
             allow PUT;
-            cgi_pass ./cgi-bin/fileUploader.py;
+            root .;
         }
 
         location /post/body {
@@ -61,7 +61,6 @@
         }
         
         location /cgi-bin/ {
-            root .;
             cgi_pass ./cgi-bin/youpi.bla;
         }
     }
