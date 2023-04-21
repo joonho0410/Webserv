@@ -22,6 +22,7 @@
 
         location /post_body {
             allow POST;
+            root ./FileStorage;
             client_max_body_size 100;
         }
         
