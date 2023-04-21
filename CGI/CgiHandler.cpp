@@ -45,6 +45,7 @@ void    CgiHandler::_M_initEnv(Request &request )
     }
     _M_findAndInit("AUTH_TYPE", "AUTHORIZATION", header);
     _M_findAndInit("CONTENT_TYPE", "CONTENT-TYPE", header);
+    _M_findAndInit("HTTP_X_SECRET_HEADER_FOR_TEST", "X-SECRET-HEADER-FOR-TEST", header);
     this->_m_env["CONTENT_LENGTH"] = std::to_string(request.getBody().length()); 
     this->_m_env["GATEWAY_INTERFACE"] = "CGI/1.1";
     this->_m_env["PATH_INFO"] = request.getUrl();
