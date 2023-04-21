@@ -55,8 +55,6 @@ std::string Response::getResponse(){
         response.append("\r\n");
     }
     response.append("\r\n");
-    std::cout << response ;
-    std::cout << _m_response.size() << std::endl;
     if (_m_addhead)
         response.append(_m_response);
     return response;
@@ -192,7 +190,6 @@ void Response::_M_parseAndSetHeader(std::string header) {
         if (pos != std::string::npos) {
             headerName = (*it).substr(0, pos);
             ft_toupper(headerName);
-             std::cout << "header Name :" << headerName << std::endl;
             content = (*it).substr(pos + 1, (*it).length());
             headerMap[headerName] = content;
         } else {
