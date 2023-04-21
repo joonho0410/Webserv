@@ -345,7 +345,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         }
 
         std::cout << "server url is : " << serverUrl << std::endl;
-        if (req.getMethod() == "POST")
+        if (req.getMethod() == "POST" && serverUrl.length() > 0)
         {
             int fd = _M_openPOST(serverUrl);
 
@@ -420,7 +420,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 return ;
             } else if (fd == -2){
                 std::cout << "open error" << std::endl;
-                req.setErrorCode(403);
+                req.setErrorCode(404);
                 udata->setState(WRITE_RESPONSE);
                 _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
@@ -473,7 +473,7 @@ void ServerEngine::writeFile(struct kevent& curr_event){
     Response &res = udata->getResponse();
     Request &req = udata->getRequest();
 
-    if (write(curr_event.ident, req.getBody().c_str(), req.getBody().length() < 0)) {
+    if (write(curr_event.ident, req.getBody().c_str(), req.getBody().length()) < 0) {
         res.setErrorCode(500);
         udata->setState(WRITE_RESPONSE);
         _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
@@ -481,6 +481,7 @@ void ServerEngine::writeFile(struct kevent& curr_event){
     }
     
     close(curr_event.ident);
+    res.setErrorCode(200);
     udata->setState(WRITE_RESPONSE);
     _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
 }
