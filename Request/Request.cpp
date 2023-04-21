@@ -309,10 +309,10 @@ void Request::_M_parseBodyChunked(size_t CRLF)
         std::string chunked_body;
         char *endPtr;
         long len;
-        std::cout << "CRLF : " << CRLF << std::endl;
-        std::cout << "_m_buf : " << _m_buf << std::endl;
-        std::cout << "_m_chunked remain : " << _m_chunkedRemain << std::endl;
-        std::cout << "_m_isChunkedProcess :" << _m_isChunkedProcess << std::endl;
+        // std::cout << "CRLF : " << CRLF << std::endl;
+        // std::cout << "_m_buf : " << _m_buf << std::endl;
+        // std::cout << "_m_chunked remain : " << _m_chunkedRemain << std::endl;
+        // std::cout << "_m_isChunkedProcess :" << _m_isChunkedProcess << std::endl;
         if (_m_state == REQUEST_ERROR)
             return ;
         if (_m_chunkedRemain != 0 && _m_isChunkedProcess ){//remain some read chunked body

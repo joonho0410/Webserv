@@ -6,7 +6,7 @@
 /*   By: gyim <gyim@student.42seoul.kr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/21 16:33:59 by gyim             ###   ########seoul.kr  */
+/*   Updated: 2023/04/21 16:41:43 by gyim             ###   ########seoul.kr  */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,7 +59,7 @@ void    CgiHandler::_M_initEnv(Request &request )
     this->_m_env["SCRIPT_NAME"] = request.getServerUrl();
     this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
-    this->_m_env["X-SECRET-HEADER-FOR-TEST"] = "1";
+    this->_m_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = "1";
     
     std::cout << "init Env is DONE " << std::endl;
 }
