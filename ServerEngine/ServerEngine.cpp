@@ -416,7 +416,7 @@ void ServerEngine::start_kqueue()
                     case READ_CGI_RESULT:   readCgiResult(*curr_event); break;
                 }
 
-                std::cout << curr_event->ident << " : READ EVNET IS DONE" << std::endl;
+                std::cout << curr_event->ident << " : READ EVENT IS DONE" << std::endl;
             }
                 
             /* Write Event */
