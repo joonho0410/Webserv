@@ -283,6 +283,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 isBodyOk = req.checkBodySize(serv);
             if (isBodyOk == false){
                 res.setErrorCode(413);//413 Payload Too Large: 클라이언트가 요청한 엔티티가 서버에서 처리할 수 있는 최대 크기를 초과한 경우
+                udata->setState(WRITE_RESPONSE);
                 _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
             }
@@ -346,6 +347,15 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         std::cout << "server url is : " << serverUrl << std::endl;
         if (req.getMethod() == "POST")
         {
+            if (serverUrl.length() == 0)
+            {
+                std::cout << "POST serverUrl is empty" << std::endl;
+                res.setErrorCode(400);
+                udata->setState(WRITE_RESPONSE);
+                _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                return ;
+            }
+
             int fd = _M_openPOST(serverUrl);
 
             if (fd >= 0)
@@ -472,7 +482,7 @@ void ServerEngine::writeFile(struct kevent& curr_event){
     Response &res = udata->getResponse();
     Request &req = udata->getRequest();
 
-    if (write(curr_event.ident, req.getBody().c_str(), req.getBody().length() < 0)) {
+    if (write(curr_event.ident, req.getBody().c_str(), req.getBody().length()) < 0) {
         res.setErrorCode(500);
         udata->setState(WRITE_RESPONSE);
         _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
@@ -480,6 +490,7 @@ void ServerEngine::writeFile(struct kevent& curr_event){
     }
     
     close(curr_event.ident);
+    res.setErrorCode(200);
     udata->setState(WRITE_RESPONSE);
     _M_changeEvents(_m_change_list, udata->getRequestedFd(), EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
 }

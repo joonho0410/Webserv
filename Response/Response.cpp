@@ -55,8 +55,6 @@ std::string Response::getResponse(){
         response.append("\r\n");
     }
     response.append("\r\n");
-    std::cout << response ;
-    std::cout << _m_response.size() << std::endl;
     if (_m_addhead)
         response.append(_m_response);
     return response;
@@ -86,6 +84,7 @@ void Response::appendResponse(std::string &str){
 } 
 
 void Response::addHeader(std::string headerName, std::string content) {
+    ft_toupper(headerName);
     _m_header[headerName] = content;
 }
 
@@ -97,10 +96,9 @@ void Response::addBasicHeader() {
     std::cout << _m_response.length() << std::endl;
     dt[std::strlen(dt) - 1] = '\0';
     setStatusLine(_m_errorCode);
-    _m_header["Server"] = "webserv/1.0";
-    _m_header["Date"] = std::string(dt);
-    _m_header["Date"] = _m_header["Date"].substr(0, _m_header["Date"].length() - 1);
-    _m_header["Content-Length"] = std::to_string(_m_response.length());
+    _m_header["SERVER"] = "webserv/1.0";
+    _m_header["DATE"] = std::string(dt);
+    _m_header["CONTENT-LENGTH"] = std::to_string(_m_response.length());
     std::cout << _m_response.length() << std::endl;
     //Content-Type은 리소스 불러올때 적어줘야함
 }
@@ -207,6 +205,7 @@ void Response::_M_parseAndSetHeader(std::string header) {
     if (valid == false)
         setResponseByErrorCode(); // ERROR CODE DEFINE??
     else
+
         _m_header = headerMap;
 }
 

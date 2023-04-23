@@ -17,11 +17,12 @@
 
         location /put_test/ {
             allow PUT;
-            cgi_pass ./cgi-bin/fileUploader.py;
+            root .;
         }
 
-        location /post/body {
+        location /post_body {
             allow POST;
+            root ./FileStorage;
             client_max_body_size 100;
         }
         
