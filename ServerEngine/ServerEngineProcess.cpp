@@ -618,8 +618,8 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     udata->clean();
     std::cout << "WRITE RESPONSE IS OCCURED " << std::endl;
     std::cout << "================= END RESPONSE WAITING ANOTHER REQUEST =====================" << std::endl;
-    _M_disconnectClient(curr_event, _m_clients);
-    // _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, curr_event.udata);
+    // _M_disconnectClient(curr_event, _m_clients);
+    _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, curr_event.udata);
     return ;
 }
 
