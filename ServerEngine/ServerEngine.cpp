@@ -28,11 +28,11 @@ int ServerEngine::_M_openPUT(std::string serverUrl)
 {
     struct stat file_stat;
 
-	// if (stat(serverUrl.c_str(), &file_stat) != 0)
-    //     return (-3);
-    // if (!S_ISREG(file_stat.st_mode))
-    //     return (-2);
-    
+	if (stat(serverUrl.c_str(), &file_stat) != 0)
+        return (-3);
+    if (!S_ISREG(file_stat.st_mode))
+        return (-2);
+
     int fd = open(serverUrl.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
              S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     return (fd);
@@ -219,13 +219,13 @@ void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
 
     optVal = 1;
     optLinger.l_onoff = 1;
-    optLinger.l_linger = 0;
+    optLinger.l_linger = 1;
     
     if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
     std::cout << "accept new client: " << client_socket << std::endl;
-    if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
-        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    // if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
+    //     exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
         exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     fcntl(client_socket, F_SETFL, O_NONBLOCK);
@@ -260,16 +260,9 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
     while (1) {
         int n = read(_curr_event.ident, buf, sizeof(buf) - 1);
         if (n <= 0) {
-            if (n == 0){
-                req.setErrorCode(408);
-                req.setState(REQUEST_ERROR);
-                return ;
-            }
             if (n < 0){
                 std::cerr << "client read error!" << std::endl;
                 std::cerr << "read out\n";
-                req.setErrorCode(408);
-                req.setState(REQUEST_ERROR);
                 return ;
             }
             std::cout << "read all ! " << std::endl;
@@ -322,29 +315,17 @@ void ServerEngine::make_serversocket()
                 exit_with_perror("socket() error\n" + std::string(strerror(errno)));
             /* setting socket option REUSEADDR & LINGER */
             if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
-            {
-                close(new_socket);
                 exit_with_perror("socket() error\n" + std::string(strerror(errno)));
-            }
             if (setsockopt(new_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
-            {
-                close(new_socket);
                 exit_with_perror("socket() error\n" + std::string(strerror(errno)));
-            }
             memset(&server_addr, 0, sizeof(server_addr));
             server_addr.sin_family = AF_INET;
             server_addr.sin_addr.s_addr = htonl(INADDR_ANY); // if ip config is served need change
             server_addr.sin_port = htons(ports_num); // need config file port option;
             if (bind(new_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1)
-            {
-                close(new_socket);
                 exit_with_perror("bind() error\n" + std::string(strerror(errno)));
-            }
             if (listen(new_socket, 5) == -1)
-            {
-                close(new_socket);
                 exit_with_perror("listen() error\n" + std::string(strerror(errno)));
-            }
             fcntl(new_socket, F_SETFL, O_NONBLOCK);
             _m_server_socket.push_back(new_socket);
             duplication_check.insert(std::make_pair(ports_num, ports_num));
@@ -416,7 +397,7 @@ void ServerEngine::start_kqueue()
                     case READ_CGI_RESULT:   readCgiResult(*curr_event); break;
                 }
 
-                std::cout << curr_event->ident << " : READ EVENT IS DONE" << std::endl;
+                std::cout << curr_event->ident << " : READ EVNET IS DONE" << std::endl;
             }
                 
             /* Write Event */

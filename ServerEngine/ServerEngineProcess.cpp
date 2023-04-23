@@ -379,7 +379,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         {
             int fd = _M_openPUT(serverUrl);
 
-            std::cout << "fd : " << fd << std::endl;
             if (fd >= 0)
             {
                 fcntl(fd, F_SETFL, O_NONBLOCK);
@@ -608,8 +607,7 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
         bytes_written = write(curr_event.ident, ret, temp.length());
         if (bytes_written < 0){
             std::cout << "============= bytes_writen error =============== " << std::endl;
-            // _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
-            _M_disconnectClient(curr_event, _m_clients);
+            _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
             return ;
         } else {
             totalSendedBytes += bytes_written;
@@ -619,7 +617,6 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     udata->clean();
     std::cout << "WRITE RESPONSE IS OCCURED " << std::endl;
     std::cout << "================= END RESPONSE WAITING ANOTHER REQUEST =====================" << std::endl;
-    // _M_disconnectClient(curr_event, _m_clients);
     _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, curr_event.udata);
     return ;
 }

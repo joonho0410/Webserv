@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   CgiHandler.cpp                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: gyim <gyim@student.42seoul.kr>             +#+  +:+       +#+        */
+/*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/23 09:05:27 by gyim             ###   ########seoul.kr  */
+/*   Updated: 2023/04/21 17:22:56 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,6 @@ void    CgiHandler::_M_initEnv(Request &request )
     this->_m_env["SCRIPT_NAME"] = request.getServerUrl();
     this->_m_env["SERVER_PROTOCOL"] = "HTTP/1.1";
     this->_m_env["SERVER_SOFTWARE"] = "webserv/1.0";
-    this->_m_env["HTTP_X_SECRET_HEADER_FOR_TEST"] = "1";
     
     std::cout << "init Env is DONE " << std::endl;
 }
