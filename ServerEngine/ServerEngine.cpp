@@ -219,13 +219,13 @@ void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
 
     optVal = 1;
     optLinger.l_onoff = 1;
-    optLinger.l_linger = 1;
+    optLinger.l_linger = 0;
     
     if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
     std::cout << "accept new client: " << client_socket << std::endl;
-    // if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
-    //     exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
+        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
         exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     fcntl(client_socket, F_SETFL, O_NONBLOCK);
@@ -324,7 +324,7 @@ void ServerEngine::make_serversocket()
             server_addr.sin_port = htons(ports_num); // need config file port option;
             if (bind(new_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1)
                 exit_with_perror("bind() error\n" + std::string(strerror(errno)));
-            if (listen(new_socket, 5) == -1)
+            if (listen(new_socket, 128) == -1)
                 exit_with_perror("listen() error\n" + std::string(strerror(errno)));
             fcntl(new_socket, F_SETFL, O_NONBLOCK);
             _m_server_socket.push_back(new_socket);

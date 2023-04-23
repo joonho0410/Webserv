@@ -42,12 +42,32 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
 }
 
 void ServerEngine::waitConnect(struct kevent &curr_event){
+    // int client_socket;
+    
+    // if ((client_socket = accept(curr_event.ident, NULL, NULL)) == -1)
+    //     exit_with_perror("accept() error\n" + std::string(strerror(errno)));
+    // std::cout << "accept new client: " << client_socket << std::endl;
+    // fcntl(client_socket, F_SETFL, O_NONBLOCK);
+
+    // /* add event for client socket - add read event */
+    // _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
     int client_socket;
+    struct linger      optLinger;
+    int                optVal;
+
+    optVal = 1;
+    optLinger.l_onoff = 1;
+    optLinger.l_linger = 0;
     
     if ((client_socket = accept(curr_event.ident, NULL, NULL)) == -1)
         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
     std::cout << "accept new client: " << client_socket << std::endl;
+    if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
+        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
+        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     fcntl(client_socket, F_SETFL, O_NONBLOCK);
+    
 
     /* add event for client socket - add read event */
     _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
@@ -617,6 +637,8 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     udata->clean();
     std::cout << "WRITE RESPONSE IS OCCURED " << std::endl;
     std::cout << "================= END RESPONSE WAITING ANOTHER REQUEST =====================" << std::endl;
+    //_M_disconnectClient(curr_event, _m_clients);
+
     _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, curr_event.udata);
     return ;
 }
