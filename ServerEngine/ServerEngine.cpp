@@ -28,11 +28,11 @@ int ServerEngine::_M_openPUT(std::string serverUrl)
 {
     struct stat file_stat;
 
-	if (stat(serverUrl.c_str(), &file_stat) != 0)
-        return (-3);
-    if (!S_ISREG(file_stat.st_mode))
-        return (-2);
-
+	// if (stat(serverUrl.c_str(), &file_stat) != 0)
+    //     return (-3);
+    // if (!S_ISREG(file_stat.st_mode))
+    //     return (-2);
+    
     int fd = open(serverUrl.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
              S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     return (fd);

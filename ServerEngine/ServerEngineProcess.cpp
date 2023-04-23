@@ -379,6 +379,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         {
             int fd = _M_openPUT(serverUrl);
 
+            std::cout << "fd : " << fd << std::endl;
             if (fd >= 0)
             {
                 fcntl(fd, F_SETFL, O_NONBLOCK);
