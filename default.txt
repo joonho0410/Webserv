@@ -64,6 +64,10 @@
         location /cgi-bin/ {
             cgi_pass ./cgi-bin/youpi.bla;
         }
+        
+        location /FileStorage/ {
+            root .;
+        }
     }
 
     server {
@@ -71,8 +75,8 @@
         server_name  nginx1.appsroot.com;
 
         location / {
-            root   /home/nginx1;
-            index  index.html index.htm;
+            root   .;
+            index  test.html index.html index.htm;
         }
     }
 

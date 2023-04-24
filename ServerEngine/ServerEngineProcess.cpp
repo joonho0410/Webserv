@@ -42,15 +42,16 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
 }
 
 void ServerEngine::waitConnect(struct kevent &curr_event){
-    int client_socket;
+//     int client_socket;
     
-    if ((client_socket = accept(curr_event.ident, NULL, NULL)) == -1)
-        exit_with_perror("accept() error\n" + std::string(strerror(errno)));
-    std::cout << "accept new client: " << client_socket << std::endl;
-    fcntl(client_socket, F_SETFL, O_NONBLOCK);
+//     if ((client_socket = accept(curr_event.ident, NULL, NULL)) == -1)
+//         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
+//     std::cout << "accept new client: " << client_socket << std::endl;
+//     fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
-    /* add event for client socket - add read event */
-    _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
+//     /* add event for client socket - add read event */
+//     _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
+    _M_makeClientSocket(&curr_event);
 }
 
 void ServerEngine::readRequest(struct kevent& curr_event){
@@ -617,6 +618,13 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     udata->clean();
     std::cout << "WRITE RESPONSE IS OCCURED " << std::endl;
     std::cout << "================= END RESPONSE WAITING ANOTHER REQUEST =====================" << std::endl;
+    if (req.getHeader().find("CONNECTION") != req.getHeader().end()){
+        if (req.getHeader()["CONNECTION"].front().compare("close") == 0){
+            _M_disconnectClient(curr_event, _m_clients);
+            return ;
+        }
+    }
+    //_M_disconnectClient(curr_event, _m_clients);
     _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, curr_event.udata);
     return ;
 }

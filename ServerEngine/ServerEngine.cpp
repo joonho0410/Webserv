@@ -50,7 +50,8 @@ void ServerEngine::_M_changeEvents(std::vector<struct kevent>& change_list, uint
 void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, std::string>& clients)
 {
     std::cout << "client disconnected: " << curr_event.ident << std::endl;
-    close(curr_event.ident);
+    shutdown(curr_event.ident, SHUT_WR);
+    // close(curr_event.ident);
     std::cout << "erase ident" << std::endl;
     if (clients.find(curr_event.ident) != clients.end())
         clients.erase(curr_event.ident);
@@ -108,6 +109,8 @@ ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
     std::vector<struct server_config_struct>::iterator begin = _m_server_config_set.begin();
     std::vector<struct server_config_struct>::iterator end = _m_server_config_set.end();
     std::vector<std::string> temp;
+    struct server_config_struct defaultServer;
+    bool findDefaultServer = false;
 
     if(_server_name == "localhost")
         _server_name = "127.0.0.1";
@@ -116,6 +119,7 @@ ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
     { 
         if ((*begin).key_and_value.find("listen")->second.front() == _ports)
         {
+            findDefaultServer = true;
             temp = (*begin).key_and_value.find("server_name")->second;
             for (int i = 0; i < temp.size(); ++ i){
                 if (temp[i] == _server_name)
@@ -218,16 +222,17 @@ void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
     int                optVal;
 
     optVal = 1;
-    optLinger.l_onoff = 1;
-    optLinger.l_linger = 1;
+    // optLinger.l_onoff = 1;
+    // optLinger.l_linger = 0;
     
     if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
     std::cout << "accept new client: " << client_socket << std::endl;
-    // if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
-    //     exit_with_perror("socket() error\n" + std::string(strerror(errno)));
-    if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
+    if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
         exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    // if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
+    //     exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    _m_clients.insert(std::make_pair(client_socket, ""));
     fcntl(client_socket, F_SETFL, O_NONBLOCK);
     
 
@@ -279,9 +284,6 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
         if (n < 1023)
             break;
     }
-    // std::cout << "========= len ==========" << std::endl;
-    // std::cout << full_len << std::endl;
-    // std::cout << req.getBuf().size() << std::endl;
 }
 
 /* make server socket using configFile */
@@ -300,8 +302,8 @@ void ServerEngine::make_serversocket()
     int                optVal;
 
     optVal = 1;
-    optLinger.l_onoff = 1;
-    optLinger.l_linger = 0;
+    // optLinger.l_onoff = 1;
+    // optLinger.l_linger = 0;
     // 종료함수가 실행되면 안에있는 버퍼들은 모두 폐기하고 바로 종료시킨다.
 
     std::cout << "Server socket creating... " << std::endl;
@@ -316,15 +318,15 @@ void ServerEngine::make_serversocket()
             /* setting socket option REUSEADDR & LINGER */
             if (setsockopt(new_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
                 exit_with_perror("socket() error\n" + std::string(strerror(errno)));
-            if (setsockopt(new_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
-                exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+            // if (setsockopt(new_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
+            //     exit_with_perror("socket() error\n" + std::string(strerror(errno)));
             memset(&server_addr, 0, sizeof(server_addr));
             server_addr.sin_family = AF_INET;
             server_addr.sin_addr.s_addr = htonl(INADDR_ANY); // if ip config is served need change
             server_addr.sin_port = htons(ports_num); // need config file port option;
             if (bind(new_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == -1)
                 exit_with_perror("bind() error\n" + std::string(strerror(errno)));
-            if (listen(new_socket, 5) == -1)
+            if (listen(new_socket, 128) == -1)
                 exit_with_perror("listen() error\n" + std::string(strerror(errno)));
             fcntl(new_socket, F_SETFL, O_NONBLOCK);
             _m_server_socket.push_back(new_socket);
@@ -382,7 +384,8 @@ void ServerEngine::start_kqueue()
             /* EOF is coming disconnect client */
             else if (curr_event->flags & EV_EOF) {
                 std::cout << "EOF disconnection \n ";
-                _M_disconnectClient(*curr_event, _m_clients);
+                close(curr_event->ident);
+                //_M_disconnectClient(*curr_event, _m_clients);
             }
 
             /* Read Event */
