@@ -119,7 +119,10 @@ ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
     { 
         if ((*begin).key_and_value.find("listen")->second.front() == _ports)
         {
-            findDefaultServer = true;
+            if (findDefaultServer == false){
+                findDefaultServer = true;
+                defaultServer = *begin;
+            }
             temp = (*begin).key_and_value.find("server_name")->second;
             for (size_t i = 0; i < temp.size(); ++ i){
                 if (temp[i] == _server_name)
@@ -130,9 +133,7 @@ ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
     /* return default server ... need change */
     // if default serverblock is defined return default block 
     // else return valid false
-    struct server_config_struct ret;
-    ret.valid = false;
-    return ret;
+    return defaultServer;
 }
 
 struct server_config_struct

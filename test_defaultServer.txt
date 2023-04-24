@@ -1,0 +1,37 @@
+    server {
+        listen       4242;
+        server_name  test1.com;
+        cgi          .php .sh .py .bla /cgi-bin/;
+
+        #charset koi8-r;
+        #client_max_body_size 1000;
+
+        #access_log  logs/host.access.log  main;
+
+        location / {
+            root   .;
+            allow GET;
+            #client_max_body_size 1000;
+            index  test.html;
+        }
+    }
+
+    server {
+        listen       4242;
+        server_name  test2.com;
+
+        cgi          .php .sh .py .bla /cgi-bin/;
+
+        #charset koi8-r;
+        #client_max_body_size 1000;
+
+        #access_log  logs/host.access.log  main;
+
+        location / {
+            root   .;
+            autoindex on;
+            allow GET;
+            #client_max_body_size 1000;
+            index  fileupload.html;
+        }
+    }
