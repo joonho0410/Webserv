@@ -8,7 +8,7 @@ void show_location_block(struct server_config_struct& config)
     for (; key_begin != key_end; ++key_begin)
     {
         std::cout << "value : " << key_begin->first << std::endl;
-        for (int i = 0; i < key_begin->second.size(); ++i)
+        for (size_t i = 0; i < key_begin->second.size(); ++i)
         {
             std::cout << (key_begin->second)[i] << std::endl;
         }
@@ -37,31 +37,6 @@ std::vector<struct server_config_struct> ServerConfig::get_config() const
     return _config_struct;
 }
 
-void ServerConfig::show_config()
-{
-    for(auto it = _config_struct.begin(); it != _config_struct.end(); ++it)
-    {
-        std::cout << std::endl;
-        std::cout << "<<<<<<<<<<<<< server block >>>>>>>>>>>" << std::endl;
-        std::cout << std::endl;
-        for (auto it2 = it->key_and_value.begin(); it2 != it->key_and_value.end(); ++it2)
-        {
-            std::cout << it2->first << " : ";
-            for (auto it3 = it2->second.begin(); it3 != it2->second.end(); ++it3)
-                std::cout << *it3 ;
-            std::cout << "\n";
-        }
-        std::cout << std::endl;
-        std::cout << " <<<<<<<< location block >>>>>>>>>>>  " << std::endl;
-        std::cout << std::endl;
-        for(auto it2 = it->location_block.begin(); it2 != it->location_block.end(); ++it2)
-        {
-            std::cout << "location key : " << it2->first << std::endl;
-            show_location_block(it2->second);
-        }
-    }
-}
-
 void ServerConfig::make_config()
 {
     _M_parse_file();
@@ -79,8 +54,10 @@ void ServerConfig::_M_parse_file()
     size_t                                              keyStart;
     size_t                                              keyEnd;
     std::map <std::string, std::vector<std::string> >   temp_key_and_value;
-    struct server_config_struct                         serverBlock = { true };
-    struct server_config_struct                         locationBlock = { true };
+    struct server_config_struct                         serverBlock;
+    struct server_config_struct                         locationBlock;
+    serverBlock.valid = true;
+    locationBlock.valid = true;
     std::vector <std::pair<std::string, struct server_config_struct> >           vector_loca;
     //open default file when _m_path is not defined;
     
@@ -240,7 +217,6 @@ void ServerConfig::_M_parse_line(struct server_config_struct &config, std::strin
     std::string value;
     size_t      keyStart;
     size_t      keyEnd;
-    size_t      lineEnd;
     std::vector<std::string> temp;
     
     keyStart = line.find_first_not_of(" \t", 0);

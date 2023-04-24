@@ -70,14 +70,14 @@ bool ServerEngine::_M_checkMethod(struct server_config_struct& serv, struct serv
     /* first check location block if not thne check serv block */
     if (loca.valid != false && loca.key_and_value.find("allow") != loca.key_and_value.end()) {
         temp = loca.key_and_value.find("allow")->second;
-        for (int i = 0; i < temp.size(); ++i) {
+        for (size_t i = 0; i < temp.size(); ++i) {
             if (method.compare(temp[i]) == 0)
                 return true;
         }
         return false;
     } else if (serv.key_and_value.find("allow") != serv.key_and_value.end()){
         temp = serv.key_and_value.find("allow")->second;
-        for (int i = 0; i < temp.size(); ++i) {
+        for (size_t i = 0; i < temp.size(); ++i) {
             if (method.compare(temp[i]) == 0)
                 return true;
         }
@@ -86,14 +86,14 @@ bool ServerEngine::_M_checkMethod(struct server_config_struct& serv, struct serv
     
     if (loca.valid != false && loca.key_and_value.find("deny") != loca.key_and_value.end()) {
         temp = loca.key_and_value.find("deny")->second;
-        for (int i = 0; i < temp.size(); ++i) {
+        for (size_t i = 0; i < temp.size(); ++i) {
             if (method.compare(temp[i]) == 0)
                 return false;
         }
     } else {
         if (serv.key_and_value.find("deny") != serv.key_and_value.end()){
             temp = serv.key_and_value.find("deny")->second;
-            for (int i = 0; i < temp.size(); ++i) {
+            for (size_t i = 0; i < temp.size(); ++i) {
                 if (method.compare(temp[i]) == 0)
                     return false;
             }
@@ -117,7 +117,7 @@ ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
         if ((*begin).key_and_value.find("listen")->second.front() == _ports)
         {
             temp = (*begin).key_and_value.find("server_name")->second;
-            for (int i = 0; i < temp.size(); ++ i){
+            for (size_t i = 0; i < temp.size(); ++ i){
                 if (temp[i] == _server_name)
                     return (*begin);
             } 
@@ -126,7 +126,8 @@ ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
     /* return default server ... need change */
     // if default serverblock is defined return default block 
     // else return valid false
-    struct server_config_struct ret = {false};
+    struct server_config_struct ret;
+    ret.valid = false;
     return ret;
 }
 
@@ -134,7 +135,6 @@ struct server_config_struct
 ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, std::string &url)
 {
     std::cout << "========== find location block =========== " << std::endl;
-    size_t pos = 0;
     std::string str;
     std::string temp;
     struct server_config_struct ret;
@@ -142,7 +142,8 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
 
     // if location block is empty return valid=false block; 
     if (server_block.location_block.empty()) {
-        struct server_config_struct temp = {false};
+        struct server_config_struct temp;
+        temp.valid = false;
         return temp;
     }
 
@@ -179,7 +180,8 @@ ServerEngine::_M_findLocationBlock(struct server_config_struct &server_block, st
     }
     
     if (valid == false){
-        struct server_config_struct temp = {false};
+        struct server_config_struct temp;
+        temp.valid = false;
         return temp;
     } else if (!ret.location_block.empty()){
         struct server_config_struct tempRet;
@@ -246,7 +248,7 @@ ServerEngine::~ServerEngine()
 {
     if (_m_server_socket.size() != 0)
     {
-        for (int i = 0; i < _m_server_socket.size(); i ++)
+        for (size_t i = 0; i < _m_server_socket.size(); i ++)
             close(_m_server_socket[i]);
     }
 }
@@ -255,7 +257,6 @@ void ServerEngine::_M_readRequest(struct kevent& _curr_event, Request& req)
 {
 
     char buf[1024];
-    int full_len = 0;
 
     while (1) {
         int n = read(_curr_event.ident, buf, sizeof(buf) - 1);
@@ -294,8 +295,6 @@ void ServerEngine::make_serversocket()
     std::vector<struct server_config_struct>::iterator end = _m_server_config_set.end();
     std::map<int, int> duplication_check; // for check duplication open ports
     std::string        key;
-    size_t             keyStart;
-    size_t             keyEnd;
     struct linger      optLinger;
     int                optVal;
 
@@ -341,7 +340,7 @@ void ServerEngine::start_kqueue()
          exit_with_perror("kqueue() error\n" + std::string(strerror(errno)));
 
     /* add event for server socket */
-    for (int i = 0; i != _m_server_socket.size(); i++)
+    for (size_t i = 0; i != _m_server_socket.size(); i++)
         _M_changeEvents(_m_change_list, _m_server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, _M_makeUdata());
     std::cout << "echo server started" << std::endl;
 

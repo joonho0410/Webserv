@@ -8,7 +8,6 @@ class KqueueUdata
 {
     private :
         int         _m_requested_fd;  //using at cgi
-        int         _m_pipe[2];       //using at cgi
         int         _m_state;
         Request     _m_req;
         Response    _m_res;
