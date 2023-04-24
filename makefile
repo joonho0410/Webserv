@@ -6,12 +6,12 @@
 #    By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/10/27 17:07:45 by junhjeon          #+#    #+#              #
-#    Updated: 2023/04/19 15:38:23 by junhjeon         ###   ########.fr        #
+#    Updated: 2023/04/24 19:00:24 by jaehyuki         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 CXX = c++
-CPPFLAGS = #-Wall -Wextra -Werror -std=c++98 -g3
+CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -g3
 SRC_DIR = .
 NAME = webserv
 SRCS = ./main.cpp \

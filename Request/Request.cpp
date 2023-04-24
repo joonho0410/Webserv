@@ -145,7 +145,7 @@ void Request::_M_parseStartLine(size_t n)
     key = line.substr(keyStart, keyEnd - keyStart);
     if (! ((key.compare("GET") == 0) || (key.compare("POST") == 0) || (key.compare("DELETE") == 0 ) || (key.compare("HEAD") == 0) || (key.compare("Put"))) )
     {
-        for (int i = 0; i < key.size(); ++i)
+        for (size_t i = 0; i < key.size(); ++i)
         {
             std::cout << (int)key[i] << std::endl;
         }
@@ -226,7 +226,7 @@ void Request::show_save()
     for(; begin != end; ++begin)
     {
         std::cout << "key : " << begin->first << std::endl;
-        for (int i = 0; i < begin->second.size(); ++i)
+        for (size_t i = 0; i < begin->second.size(); ++i)
         {
             std::cout << (begin->second)[i] ;
         }
@@ -304,15 +304,10 @@ void Request::_M_parseBodyChunked(size_t CRLF)
 {
     std::cout << "_M_parseBodyChunked OCCURED " << std::endl;
     try {        
-        size_t      bodyLen;
         std::string length;
         std::string chunked_body;
         char *endPtr;
-        long len;
-        // std::cout << "CRLF : " << CRLF << std::endl;
-        // std::cout << "_m_buf : " << _m_buf << std::endl;
-        // std::cout << "_m_chunked remain : " << _m_chunkedRemain << std::endl;
-        // std::cout << "_m_isChunkedProcess :" << _m_isChunkedProcess << std::endl;
+        
         if (_m_state == REQUEST_ERROR)
             return ;
         if (_m_chunkedRemain != 0 && _m_isChunkedProcess ){//remain some read chunked body
@@ -418,14 +413,10 @@ void Request::_M_parseRequestheader()
 {
     size_t      lineStart = 0;
     size_t      lineEnd = 0;
-    size_t      keyStart = 0;
-    size_t      keyEnd = 0;
-    size_t      headerEnd = 0;
 
     std::string line;
     std::string key;
     std::string value;
-    bool        is_emptyline = false;
     
     while (1) {
         if (_m_state != READ_HEADER)

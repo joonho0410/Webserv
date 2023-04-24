@@ -15,6 +15,10 @@
             index  test.html;
         }
 
+        location /FileStorage {
+            root .;
+        }
+
         location /put_test/ {
             allow PUT;
             root .;
@@ -73,10 +77,72 @@
     server {
         listen       80;
         server_name  nginx1.appsroot.com;
+        cgi          .php .sh .py .bla /cgi-bin/;
+
+        #charset koi8-r;
+        #client_max_body_size 1000;
+
+        #access_log  logs/host.access.log  main;
 
         location / {
             root   .;
-            index  test.html index.html index.htm;
+            allow GET;
+            #client_max_body_size 1000;
+            index  test.html;
+        }
+
+        location /FileStorage {
+            root .;
+        }
+
+        location /put_test/ {
+            allow PUT;
+            root .;
+        }
+
+        location /post_body {
+            allow POST;
+            root ./FileStorage;
+            client_max_body_size 100;
+        }
+        
+        location /directory/ {
+            allow GET;
+            alias ./YoupiBanane/;
+            location nop {
+                allow GET;
+                alias ./YoupiBanane/nop;
+                index /youpi.bad_extension;
+            }
+            location nop/ {
+                allow GET;
+                alias ./YoupiBanane/nop/;
+                index youpi.bad_extension;
+            }
+            location Yeah{
+                alias ./YoupiBanane/Yeah;
+            }
+            index youpi.bad_extension;
+        }
+
+        location /redirection {
+            root .;
+            return 301 https://google.com$request_uri;
+        }
+        
+        location /test/ {
+            root .;
+            index test3.html;
+            location /cgi-bin/ {
+                alias ./cgi-bin/;
+            }
+            #http://localhost:8080/test/cgi-bin/tester/user/info
+            location /*.py {
+            }
+        }
+        
+        location /cgi-bin/ {
+            cgi_pass ./cgi-bin/youpi.bla;
         }
     }
 
@@ -84,8 +150,17 @@
         listen       80;
         server_name  nginx2.appsroot.com;
 
+        cgi          .php .sh .py .bla /cgi-bin/;
+
+        #charset koi8-r;
+        #client_max_body_size 1000;
+
+        #access_log  logs/host.access.log  main;
+
         location / {
-            root   /home/nginx2;
-            index  index.html index.htm;
+            root   .;
+            allow GET;
+            #client_max_body_size 1000;
+            index  fileupload.html;
         }
     }

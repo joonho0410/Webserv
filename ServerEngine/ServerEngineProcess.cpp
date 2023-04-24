@@ -2,7 +2,6 @@
 
 void ServerEngine::waitCgiEnd(struct kevent &curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
-    Request& req = udata->getRequest();
     Response& res = udata->getResponse();
     int status;
 
@@ -42,16 +41,35 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
 }
 
 void ServerEngine::waitConnect(struct kevent &curr_event){
-//     int client_socket;
+    // int client_socket;
     
-//     if ((client_socket = accept(curr_event.ident, NULL, NULL)) == -1)
-//         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
-//     std::cout << "accept new client: " << client_socket << std::endl;
-//     fcntl(client_socket, F_SETFL, O_NONBLOCK);
+    // if ((client_socket = accept(curr_event.ident, NULL, NULL)) == -1)
+    //     exit_with_perror("accept() error\n" + std::string(strerror(errno)));
+    // std::cout << "accept new client: " << client_socket << std::endl;
+    // fcntl(client_socket, F_SETFL, O_NONBLOCK);
 
-//     /* add event for client socket - add read event */
-//     _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
-    _M_makeClientSocket(&curr_event);
+    // /* add event for client socket - add read event */
+    // _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
+    int client_socket;
+    struct linger      optLinger;
+    int                optVal;
+
+    optVal = 1;
+    optLinger.l_onoff = 1;
+    optLinger.l_linger = 0;
+    
+    if ((client_socket = accept(curr_event.ident, NULL, NULL)) == -1)
+        exit_with_perror("accept() error\n" + std::string(strerror(errno)));
+    std::cout << "accept new client: " << client_socket << std::endl;
+    if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
+        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
+        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    fcntl(client_socket, F_SETFL, O_NONBLOCK);
+    
+
+    /* add event for client socket - add read event */
+    _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
 }
 
 void ServerEngine::readRequest(struct kevent& curr_event){
@@ -148,7 +166,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             req.setIsCgi(true);
         else {
             temp = req.getUrl();
-            for (int i = 0; i < cgi_value.size() - 1 ; ++ i){ 
+            for (size_t i = 0; i < cgi_value.size() - 1 ; ++ i){ 
                 if (temp.length() < cgi_value[i].length())
                     ;
                 else if (temp.substr(temp.length() - cgi_value[i].length()) == cgi_value[i]) {
@@ -208,7 +226,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             if (loca.key_and_value.find("index") != loca.key_and_value.end()){
                 std::cout << "find index " << std::endl;
                 std::vector<std::string> &temp = loca.key_and_value.find("index")->second;
-                for (int i = 0; i < temp.size(); ++i) {
+                for (size_t i = 0; i < temp.size(); ++i) {
                     tempServerUrl =  serverUrl + temp[i];
                     std::cout << serverUrl << std::endl;
                     std::ifstream fileStream(tempServerUrl.c_str());
@@ -326,7 +344,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
             if (loca.key_and_value.find("index") != loca.key_and_value.end()){
                 std::cout << "find index " << std::endl;
                 std::vector<std::string> &temp = loca.key_and_value.find("index")->second;
-                for (int i = 0; i < temp.size(); ++i) {
+                for (size_t i = 0; i < temp.size(); ++i) {
                     tempServerUrl =  serverUrl + temp[i];
                     std::cout << serverUrl << std::endl;
                     std::ifstream fileStream(tempServerUrl.c_str());
@@ -407,13 +425,16 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         }
         else if (req.getMethod() == "DELETE")
         {
-            if (std::remove(serverUrl.c_str()) != 0)
+            if (std::remove(serverUrl.c_str()) != 0) //권한없음시 403처리
             {
                 res.setErrorCode(500);
                 udata->setState(WRITE_RESPONSE);
                 _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
             }
+            res.setErrorCode(200);
+            udata->setState(WRITE_RESPONSE);
+            _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         }
         else
         {
@@ -450,7 +471,6 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
 void ServerEngine::readDocs(struct kevent& curr_event){
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
     Response &res = udata->getResponse();
-    Request &req = udata->getRequest();
     char buffer[1024]; // 읽은 데이터를 저장할 버퍼
     int bytesRead = 0; // 읽은 바이트 수
     int totalBytesRead = 0; // 총 읽은 바이트 수
@@ -500,7 +520,6 @@ void ServerEngine::readCgiResult(struct kevent& curr_event){
     /* read udata->outfile and make response */
     std::cout << "READ CGI RESULT " << std::endl;
     KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
-    Request& req = udata->getRequest();
     Response& res = udata->getResponse();
     char *buf;
 
@@ -598,7 +617,6 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     }
     responseString = res.getResponse();
 
-    const char* ret = responseString.c_str();
     int len = responseString.length();
     // std::cout << len << std::endl;
     while (totalSendedBytes != len)

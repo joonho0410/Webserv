@@ -42,6 +42,5 @@ class ServerConfig
     public :
         void set_path(std::string path);
         void make_config();
-        void show_config();
         std::vector<struct server_config_struct> get_config() const;      
 };

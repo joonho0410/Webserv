@@ -25,7 +25,6 @@ int main(int argc, char** argv)
             server_config.set_path(path);
         }
         server_config.make_config();
-        server_config.show_config();
         config_set = server_config.get_config();
     }
     server_engine.set_config_set(config_set);

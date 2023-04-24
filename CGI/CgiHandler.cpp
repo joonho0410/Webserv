@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/03/29 18:51:49 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/21 17:22:56 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/24 17:23:49 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,7 +100,6 @@ int CgiHandler::executeCgi() {
         dup2(_m_inFilefd, STDIN);
         dup2(_m_outFilefd, STDOUT);
         execve(script_name, NULL, env);
-        write(2, "CGI FAILED\n", 11);
         std::cout << "EXECUTE CGI FAIL!" << std::endl;
     }
     else

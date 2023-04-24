@@ -2,7 +2,7 @@
 
 void ft_toupper(std::string &key)
 {
-    for (int i = 0; i < key.size(); ++i)
+    for (size_t i = 0; i < key.size(); ++i)
         key[i] = std::toupper(key[i]);
 }
 
@@ -15,7 +15,7 @@ bool ft_ishexdigit(std::string &str)
 
 bool ft_is_digit(std::string &str)
 {
-    for (int i = 0; i < str.size(); ++i)
+    for (size_t i = 0; i < str.size(); ++i)
     {
         if(!isdigit(str[i]))
          return false;
