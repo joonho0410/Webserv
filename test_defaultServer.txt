@@ -12,7 +12,7 @@
             root   .;
             allow GET;
             #client_max_body_size 1000;
-            index  test.html;
+            index  test2.html;
         }
     }
 
