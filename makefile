@@ -6,7 +6,7 @@
 #    By: gyim <gyim@student.42seoul.kr>             +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/10/27 17:07:45 by junhjeon          #+#    #+#              #
-#    Updated: 2023/04/25 17:46:50 by gyim             ###   ########seoul.kr   #
+#    Updated: 2023/04/25 19:46:35 by gyim             ###   ########seoul.kr   #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,13 +17,12 @@ NAME = webserv
 SRCS = ./main.cpp \
 	./ServerConfig/ServerConfig.cpp \
 	./ServerEngine/ServerEngine.cpp \
-	./ServerEngine/ServerEngineProcess.cpp\
+	./ServerEngine/ServerEngineProcess.cpp \
 	./Request/Request.cpp \
 	./Response/Response.cpp	\
 	./CGI/CgiHandler.cpp	\
 	./KqueueUdata.cpp \
-	./ParsingUtility.cpp \
-	./Session/HttpSession.cpp 
+	./ParsingUtility.cpp
 
 
 OBJS = $(SRCS:.cpp=.o)

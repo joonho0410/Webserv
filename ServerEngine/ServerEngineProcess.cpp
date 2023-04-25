@@ -611,7 +611,9 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
             res.setErrorCode(req.getErrorCode());
         res.setRedirectUrl(req.getRedirectUrl());
         if (res.getErrorCode() != OK)
+        {
             res.setResponseByErrorCode();
+        }
         else
             res.addBasicHeader();
     }

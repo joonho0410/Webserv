@@ -14,16 +14,16 @@
         #    root ./error_page;
         #}
 
-        #error_page 405 /405.html
+        error_page 405 /405.html;
 
-        #location /405.html {
-        #    root ./error_page
-        #}
+        location /405.html {
+            root ./error_page;
+        }
 
-        #error_page 500 502 503 504 /50x.html
+       #error_page 500 502 503 504 /50x.html;
 
         #location /50x.html {
-        #    root ./error_page
+        #    root ./error_page;
         #}
 
         location / {
