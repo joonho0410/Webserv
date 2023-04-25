@@ -7,7 +7,8 @@ HttpSession::HttpSession()
 
 HttpSession::HttpSession(const HttpSession& copy)
 {
-
+	this->sessionId = copy.getSessionId();
+	this->sessionData = copy.sessionData;
 }
 
 HttpSession::~HttpSession()
@@ -17,7 +18,11 @@ HttpSession::~HttpSession()
 
 HttpSession& HttpSession::operator=(const HttpSession& copy)
 {
-
+	if (this == &copy)
+		return (*this);
+	this->sessionId = copy.getSessionId();
+	this->sessionData = copy.sessionData;
+	return (*this);
 }
 
 HttpSession::HttpSession(const std::string& sessionId)
