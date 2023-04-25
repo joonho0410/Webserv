@@ -7,8 +7,11 @@ int ServerEngine::_M_openDocs(std::string serverUrl)
 
     if (stat(serverUrl.c_str(), &file_stat) == -1)
         return (-1);
-    if (!S_ISREG(file_stat.st_mode))
+
+    if (S_ISDIR(file_stat.st_mode))
         return (-2);
+    else if (!S_ISREG(file_stat.st_mode))
+        return (-1);
     
     fd = open(serverUrl.c_str(), O_RDONLY);
     if (fd == -1)
@@ -36,6 +39,92 @@ int ServerEngine::_M_openPUT(std::string serverUrl)
     int fd = open(serverUrl.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
              S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     return (fd);
+}
+
+void ServerEngine::_M_autoIndexing(struct kevent &curr_event, std::string serverUrl)
+{
+    KqueueUdata *udata = reinterpret_cast<KqueueUdata *>(curr_event.udata);
+    Response &res = udata->getResponse();
+
+    DIR *dir;
+    struct dirent *ent;
+
+    if ((dir = opendir(serverUrl.c_str())) == NULL) {
+        res.setErrorCode(404);
+        udata->setState(WRITE_RESPONSE);
+        _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+        return ;
+    }
+
+    /*-------Make Body----------*/
+    std::string body;
+    body += "<!DOCTYPE html>\n";
+    body += "<html>\n";
+    body += "<head>\n";
+    body += "   <title>"
+        + std::string("Index of ") + serverUrl
+        + "</title>\n";
+    body += "</head>\n";
+    body += "<body>\n";
+    body += "<h1>";
+    body += "Index of ";
+    body += serverUrl;
+    body += "</h1>\n";
+    body += "<pre>   Name   Last modified   Size\n";
+    body += "<hr>\n";
+    while ((ent = readdir(dir)) != NULL) {
+        std::string fileTag = "";
+        if (ent->d_name[0] != '.') {
+            struct stat fileInfo;
+            std::string filePath = serverUrl + "/" + std::string(ent->d_name);
+            if (stat(filePath.c_str(), &fileInfo) == -1) {
+                std::cerr << "Error getting file info for " << filePath << std::endl;
+                continue ;
+            }
+            filePath = filePath.substr(1);
+            fileTag += "<img src=\"";
+            fileTag += std::string(filePath);
+            fileTag += "\"";
+            // 파일 타입 출력
+            if (S_ISREG(fileInfo.st_mode)) {
+                fileTag += "alt=\"[FILE]\">";
+            } else if (S_ISDIR(fileInfo.st_mode)) {
+                fileTag += "alt=\"[DIR]\">";
+            } else {
+                fileTag += "alt=\"[???]\">";
+            }
+            fileTag += "<a href=\"";
+            fileTag += filePath;
+            fileTag += "\">";
+            fileTag += std::string(ent->d_name);
+            fileTag += "</a>";
+            char buffer[80];
+            strftime(buffer, 80, "%Y-%m-%d %H:%M:%S", localtime(&fileInfo.st_mtime));
+            fileTag += "         ";
+            fileTag += std::string(buffer);
+            fileTag += "         ";
+            fileTag += std::to_string(fileInfo.st_size) + " Bytes\n";
+        }
+        body += fileTag;
+    }
+    body += "</pre><hr>\n";
+    //<img src="/icons/dir.gif" alt="[DIR]"> <a href="../">Parent Directory</a>                  01-Jan-1970 00:00      -  
+    //<img src="/icons/generic.gif" alt="[FILE]"> <a href="bbb-manifest-refresh.mpd">bbb-manifest-refresh.mpd</a>          21-Jun-2016 18:03     3k  
+    //<img src="/icons/generic.gif" alt="[FILE]"> <a href="bbb_30fps.mpd">bbb_30fps.mpd</a>                     18-Mar-2016 18:15     3k  
+    //</pre><hr>
+    ///////
+    body += "</body>\n";
+    body += "</html>";
+    body += "\n";
+    /*------------------------*/
+
+    closedir(dir);
+    res.appendResponse(body);
+    res.addHeader("Content-Security-Policy", "img-src 'none'"); //다른 이미지 소스 요청 블로킹
+    res.addHeader("Content-type", "text/html; charset=UTF-8");
+    udata->setState(WRITE_RESPONSE);
+    res.setErrorCode(200);
+    _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
 }
 
 void ServerEngine::_M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,

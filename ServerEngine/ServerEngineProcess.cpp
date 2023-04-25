@@ -439,7 +439,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         else
         {
             int fd = _M_openDocs(serverUrl);
-            //int fd = open(serverUrl.c_str(), O_RDONLY);
+
             if (fd != -1 && fd != -2){
                 if (req.getMethod().compare("HEAD") == 0)
                     res.setAddHead(false);
@@ -450,19 +450,32 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 _M_changeEvents(_m_change_list, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
             } else if (fd == -2){
-                std::cout << "open error" << std::endl;
-                req.setErrorCode(404);
+                if (loca.valid != false
+                    && loca.key_and_value.find("autoindex") != loca.key_and_value.end()
+                    && loca.key_and_value["autoindex"].size() != 0
+                    && loca.key_and_value["autoindex"].front().compare("on") == 0)
+                {
+                    _M_autoIndexing(curr_event, serverUrl);
+                }
+                else
+                {
+                    std::cout << loca.block_name << std::endl;
+                    std::cout << "GET open error(Not Allowed autoindexing)" << std::endl;
+                    res.setErrorCode(404);
+                    udata->setState(WRITE_RESPONSE);
+                    _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                    return ;
+                }
+            }
+            else
+            {
+                // open error == 404 error //
+                std::cout << "GET open error" << std::endl;
+                res.setErrorCode(404);
                 udata->setState(WRITE_RESPONSE);
                 _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
             }
-            // open error == 404 error //
-            std::cout << "open error" << std::endl;
-            res.setErrorCode(404);
-            udata->setState(WRITE_RESPONSE);
-            _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
-            return ;
-        // _M_disconnectClient(curr_event, _m_clients);
         }
     }                            
     /* GET POST METHOD SERVING CGI */
