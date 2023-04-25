@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <dirent.h>
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/stat.h>
@@ -39,6 +40,7 @@ class ServerEngine
         struct server_config_struct _M_findLocationBlock(struct server_config_struct &_server_block, std::string &url);
 
         KqueueUdata* _M_makeUdata(int state);
+        void _M_autoIndexing(struct kevent &curr_event, std::string serverUrl);
         void _M_disconnectClient(struct kevent& , std::map<int, std::string>& clients);
         void _M_changeEvents(std::vector<struct kevent>& change_list, uintptr_t ident, int16_t filter,
         uint16_t flags, uint32_t fflags, intptr_t data, void *udata);
