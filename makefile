@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+         #
+#    By: gyim <gyim@student.42seoul.kr>             +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/10/27 17:07:45 by junhjeon          #+#    #+#              #
-#    Updated: 2023/04/24 19:00:24 by jaehyuki         ###   ########.fr        #
+#    Updated: 2023/04/25 17:46:50 by gyim             ###   ########seoul.kr   #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,7 +22,8 @@ SRCS = ./main.cpp \
 	./Response/Response.cpp	\
 	./CGI/CgiHandler.cpp	\
 	./KqueueUdata.cpp \
-	./ParsingUtility.cpp 
+	./ParsingUtility.cpp \
+	./Session/HttpSession.cpp 
 
 
 OBJS = $(SRCS:.cpp=.o)
