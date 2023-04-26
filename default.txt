@@ -1,11 +1,14 @@
     server {
         listen       4242;
         server_name  localhost;
-        cgi          .php .sh .py .bla /cgi-bin/;
-
+        cgi          .bla /cgi-bin/;
+        cgi          .py  /cgi-bin-py/;
+        
+        error_page  404 405 303 123 ./default_error_page.html;
+        error_page  501 502 503 504 505 ./default_error_page50x.html;
+        
         #charset koi8-r;
         #client_max_body_size 1000;
-
         #access_log  logs/host.access.log  main;
 
         #error_page 404 /404.html
@@ -87,6 +90,11 @@
         location /cgi-bin/ {
             cgi_pass ./cgi-bin/youpi.bla;
         }
+        
+        location /cgi-bin-py/ {
+            cgi_pass ./cgi-bin/test.py;
+        }
+
     }
 
     server {

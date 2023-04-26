@@ -120,7 +120,7 @@ void ServerEngine::_M_autoIndexing(struct kevent &curr_event, std::string server
 
     closedir(dir);
     res.appendResponse(body);
-    res.addHeader("Content-Security-Policy", "img-src 'none'"); //다른 이미지 소스 요청 블로킹
+    // res.addHeader("Content-Security-Policy", "img-src 'none'"); //다른 이미지 소스 요청 블로킹
     res.addHeader("Content-type", "text/html; charset=UTF-8");
     udata->setState(WRITE_RESPONSE);
     res.setErrorCode(200);
@@ -208,7 +208,10 @@ ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
     { 
         if ((*begin).key_and_value.find("listen")->second.front() == _ports)
         {
-            findDefaultServer = true;
+            if (findDefaultServer == false){
+                findDefaultServer = true;
+                defaultServer = *begin;
+            }
             temp = (*begin).key_and_value.find("server_name")->second;
             for (size_t i = 0; i < temp.size(); ++ i){
                 if (temp[i] == _server_name)
@@ -219,9 +222,7 @@ ServerEngine::_M_findServerPort(std::string _ports, std::string _server_name)
     /* return default server ... need change */
     // if default serverblock is defined return default block 
     // else return valid false
-    struct server_config_struct ret;
-    ret.valid = false;
-    return ret;
+    return defaultServer;
 }
 
 struct server_config_struct
@@ -307,31 +308,6 @@ KqueueUdata* ServerEngine::_M_makeUdata(int state = 0)
 /* SWITCH CASE FUNCTIONS */
 ///////////////////////////
 
-void ServerEngine::_M_makeClientSocket(struct kevent *curr_event){
-    int client_socket;
-    struct linger      optLinger;
-    int                optVal;
-
-    optVal = 1;
-    optLinger.l_onoff = 1;
-    optLinger.l_linger = 0;
-    
-    if ((client_socket = accept(curr_event->ident, NULL, NULL)) == -1)
-        exit_with_perror("accept() error\n" + std::string(strerror(errno)));
-    std::cout << "accept new client: " << client_socket << std::endl;
-    if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
-        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
-    if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
-        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
-    // if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
-    //     exit_with_perror("socket() error\n" + std::string(strerror(errno)));
-    _m_clients.insert(std::make_pair(client_socket, ""));
-    fcntl(client_socket, F_SETFL, O_NONBLOCK);
-    
-
-    /* add event for client socket - add read event */
-    _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
-}
 
 ServerEngine::ServerEngine()
 {
@@ -473,7 +449,7 @@ void ServerEngine::start_kqueue()
 
             /* EOF is coming disconnect client */
             else if (curr_event->flags & EV_EOF) {
-                std::cout << "EOF disconnection \n ";
+                std::cout << curr_event->ident << " : EOF disconnection \n ";
                 close(curr_event->ident);
                 //_M_disconnectClient(*curr_event, _m_clients);
             }

@@ -234,12 +234,17 @@ void ServerConfig::_M_parse_line(struct server_config_struct &config, std::strin
         //std::cout << value << std::endl;
         if (config.key_and_value.find(key) != config.key_and_value.end())
         {
+            if(key.compare("cgi") == 0 || key.compare("error_page") == 0)
+                temp.push_back(value);
             std::cout << "already exist key " << std::endl;
             exit(1);
         }
         temp.push_back(value);   
     }
-    config.key_and_value[key] = temp;
+    if (key.compare("cgi") == 0 || key.compare("error_page") == 0)
+        config.duplicate_key_and_value[key].push_back(temp);
+    else
+        config.key_and_value[key] = temp;
 }
 
 void ServerConfig::_M_parse_KeyValuePairs(std::string const &_input)

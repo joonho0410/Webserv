@@ -50,7 +50,6 @@ class ServerEngine
         int _M_openPUT(std::string serverUrl);
 
         /* switch case */
-        void _M_makeClientSocket(struct kevent*);
         void _M_readRequest(struct kevent&, Request&);
         void _M_executeRequest(struct kevent& curr_event, Request &req);
 
