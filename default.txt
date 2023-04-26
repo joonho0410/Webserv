@@ -1,22 +1,26 @@
     server {
         listen       4242;
         server_name  localhost;
-        cgi          .php .sh .py .bla /cgi-bin/;
-
+        cgi          .bla /cgi-bin/;
+        cgi          .py  /cgi-bin-py/;
+        
+        error_page  404 405 303 123 ./default_error_page.html;
+        error_page  501 502 503 504 505 ./default_error_page50x.html;
+        
         #charset koi8-r;
         #client_max_body_size 1000;
-
         #access_log  logs/host.access.log  main;
 
         location / {
-            root   .;
-            allow GET;
+            root    .;
+            allow   GET;
             #client_max_body_size 1000;
             index  test.html;
         }
 
         location /FileStorage {
             root .;
+            autoindex on;
         }
 
         location /put_test/ {
@@ -69,14 +73,16 @@
             cgi_pass ./cgi-bin/youpi.bla;
         }
         
-        location /FileStorage/ {
-            root .;
+        location /cgi-bin-py/ {
+            cgi_pass ./cgi-bin/test.py;
         }
+
     }
 
     server {
         listen       80;
         server_name  nginx1.appsroot.com;
+
         cgi          .php .sh .py .bla /cgi-bin/;
 
         #charset koi8-r;
@@ -88,61 +94,7 @@
             root   .;
             allow GET;
             #client_max_body_size 1000;
-            index  test.html;
-        }
-
-        location /FileStorage {
-            root .;
-        }
-
-        location /put_test/ {
-            allow PUT;
-            root .;
-        }
-
-        location /post_body {
-            allow POST;
-            root ./FileStorage;
-            client_max_body_size 100;
-        }
-        
-        location /directory/ {
-            allow GET;
-            alias ./YoupiBanane/;
-            location nop {
-                allow GET;
-                alias ./YoupiBanane/nop;
-                index /youpi.bad_extension;
-            }
-            location nop/ {
-                allow GET;
-                alias ./YoupiBanane/nop/;
-                index youpi.bad_extension;
-            }
-            location Yeah{
-                alias ./YoupiBanane/Yeah;
-            }
-            index youpi.bad_extension;
-        }
-
-        location /redirection {
-            root .;
-            return 301 https://google.com$request_uri;
-        }
-        
-        location /test/ {
-            root .;
-            index test3.html;
-            location /cgi-bin/ {
-                alias ./cgi-bin/;
-            }
-            #http://localhost:8080/test/cgi-bin/tester/user/info
-            location /*.py {
-            }
-        }
-        
-        location /cgi-bin/ {
-            cgi_pass ./cgi-bin/youpi.bla;
+            index  test2.html;
         }
     }
 

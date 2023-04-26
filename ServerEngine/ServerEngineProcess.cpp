@@ -41,22 +41,16 @@ void ServerEngine::waitCgiEnd(struct kevent &curr_event){
 }
 
 void ServerEngine::waitConnect(struct kevent &curr_event){
-    // int client_socket;
-    
-    // if ((client_socket = accept(curr_event.ident, NULL, NULL)) == -1)
-    //     exit_with_perror("accept() error\n" + std::string(strerror(errno)));
-    // std::cout << "accept new client: " << client_socket << std::endl;
-    // fcntl(client_socket, F_SETFL, O_NONBLOCK);
-
-    // /* add event for client socket - add read event */
-    // _M_changeEvents(_m_change_list, client_socket, EVFILT_READ , EV_ADD | EV_ONESHOT, 0, 0, _M_makeUdata(READ_REQUEST));
     int client_socket;
     struct linger      optLinger;
     int                optVal;
+    struct timeval timeout;
 
     optVal = 1;
     optLinger.l_onoff = 1;
     optLinger.l_linger = 0;
+    timeout.tv_sec = 5; // 5초 타임아웃
+    timeout.tv_usec = 0;
     
     if ((client_socket = accept(curr_event.ident, NULL, NULL)) == -1)
         exit_with_perror("accept() error\n" + std::string(strerror(errno)));
@@ -64,6 +58,10 @@ void ServerEngine::waitConnect(struct kevent &curr_event){
     if (setsockopt(client_socket, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal)) == -1)
         exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     if (setsockopt(client_socket, SOL_SOCKET, SO_LINGER, &optLinger, sizeof(optLinger)) == -1)
+        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    if (setsockopt(client_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+        exit_with_perror("socket() error\n" + std::string(strerror(errno)));
+    if (setsockopt(client_socket, SOL_SOCKET, SO_NOSIGPIPE, &optVal, sizeof(optVal)) == -1)
         exit_with_perror("socket() error\n" + std::string(strerror(errno)));
     fcntl(client_socket, F_SETFL, O_NONBLOCK);
     
@@ -158,22 +156,25 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
     }
     
     /* check is CGI */
-    if (serv.key_and_value.find("cgi") != serv.key_and_value.end()){
-        std::vector<std::string> cgi_value = serv.key_and_value.find("cgi")->second;
+    if (serv.duplicate_key_and_value.find("cgi") != serv.duplicate_key_and_value.end()){
+        std::vector<std::vector <std::string > > m = serv.duplicate_key_and_value.find("cgi")->second;
         std::string temp;
 
-        if (loca.block_name == cgi_value.back())
-            req.setIsCgi(true);
-        else {
-            temp = req.getUrl();
-            for (size_t i = 0; i < cgi_value.size() - 1 ; ++ i){ 
-                if (temp.length() < cgi_value[i].length())
-                    ;
-                else if (temp.substr(temp.length() - cgi_value[i].length()) == cgi_value[i]) {
-                    std::string temp = cgi_value.back();
-                    loca = _M_findLocationBlock(serv, temp);
-                    req.setIsCgi(true);
-                    break ;
+        for (size_t i = 0; i < m.size(); ++ i){
+            std::vector <std::string > cgi_value = m[i]; 
+            if (loca.block_name == cgi_value.back())
+                req.setIsCgi(true);
+            else {
+                temp = req.getUrl();
+                for (size_t i = 0; i < cgi_value.size() - 1 ; ++ i){ 
+                    if (temp.length() < cgi_value[i].length())
+                        ;
+                    else if (temp.substr(temp.length() - cgi_value[i].length()) == cgi_value[i]) {
+                        std::string temp = cgi_value.back();
+                        loca = _M_findLocationBlock(serv, temp);
+                        req.setIsCgi(true);
+                        break ;
+                    }
                 }
             }
         }
@@ -439,7 +440,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         else
         {
             int fd = _M_openDocs(serverUrl);
-            //int fd = open(serverUrl.c_str(), O_RDONLY);
+
             if (fd != -1 && fd != -2){
                 if (req.getMethod().compare("HEAD") == 0)
                     res.setAddHead(false);
@@ -450,19 +451,32 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
                 _M_changeEvents(_m_change_list, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
             } else if (fd == -2){
-                std::cout << "open error" << std::endl;
-                req.setErrorCode(404);
+                if (loca.valid != false
+                    && loca.key_and_value.find("autoindex") != loca.key_and_value.end()
+                    && loca.key_and_value["autoindex"].size() != 0
+                    && loca.key_and_value["autoindex"].front().compare("on") == 0)
+                {
+                    _M_autoIndexing(curr_event, serverUrl);
+                }
+                else
+                {
+                    std::cout << loca.block_name << std::endl;
+                    std::cout << "GET open error(Not Allowed autoindexing)" << std::endl;
+                    res.setErrorCode(404);
+                    udata->setState(WRITE_RESPONSE);
+                    _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
+                    return ;
+                }
+            }
+            else
+            {
+                // open error == 404 error //
+                std::cout << "GET open error" << std::endl;
+                res.setErrorCode(404);
                 udata->setState(WRITE_RESPONSE);
                 _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
                 return ;
             }
-            // open error == 404 error //
-            std::cout << "open error" << std::endl;
-            res.setErrorCode(404);
-            udata->setState(WRITE_RESPONSE);
-            _M_changeEvents(_m_change_list, curr_event.ident, EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
-            return ;
-        // _M_disconnectClient(curr_event, _m_clients);
         }
     }                            
     /* GET POST METHOD SERVING CGI */
@@ -631,6 +645,8 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
         } else {
             totalSendedBytes += bytes_written;
             std::cout << "total sended bytes: " << totalSendedBytes << std::endl;
+            if (totalSendedBytes != len)
+                _M_changeEvents(_m_change_list, curr_event.ident,  EVFILT_WRITE, EV_ADD | EV_ONESHOT, 0, 0, udata);
         }
     }
     udata->clean();
