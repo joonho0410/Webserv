@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/25 19:34:20 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/26 12:48:56 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/26 18:41:24 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ void	Session::_M_clearExpieredSession()
 	}
 }
 
-std::string Session::createSession();
+std::string Session::createSession()
 {
 	std::string sessionId = _M_generateSessionId();
 	time_t	now = time(NULL);
@@ -58,7 +58,7 @@ std::string Session::createSession();
 	return (sessionId);
 }
 
-bool verifySession(std::string sessionId)
+bool Session::verifySession(std::string sessionId)
 {
 	if (_m_sessions.find(sessionId) == _m_sessions.end())
 		return false;

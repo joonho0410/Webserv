@@ -428,6 +428,9 @@ void Request::_M_parseRequestheader()
         _M_parseKeyValue(line);
         lineStart = lineEnd + 2;
     }
+    std::vector<std::string> cookies = _m_header.find("COOKIE");
+    if (cookies.)
+
     _m_buf = _m_buf.substr(lineStart);
     std::cout << "when REQUEST HEADER IS ENDED ::: " << _m_buf.size() << std::endl;
 }

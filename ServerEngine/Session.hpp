@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/25 19:34:16 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/26 12:44:51 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/26 18:41:46 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,5 +30,5 @@ class Session {
 		~Session();
 		
 		std::string createSession();
-		std::string verifySession(std::string sessionId);
+		bool verifySession(std::string sessionId);
 };

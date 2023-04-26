@@ -69,6 +69,8 @@ class Request
 
         /* initialize with empty */
         std::map< std::string, std::vector<std::string> > _m_header;
+        std::map< std::string, std::string> _m_cookies;
+        std::string _m_sessionId;
         std::string _m_startLine;
         std::string _m_body;
         std::string _m_method;

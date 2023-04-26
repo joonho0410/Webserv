@@ -618,7 +618,11 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     std::string responseString;
     int &totalSendedBytes = res.getTotalSendedBytes();
     int bytes_written = 0;
-    
+
+    ///
+    res.addCookie("sampleCookie=jajajajaja;");
+    res.addCookie("sampleCookie2=haaaaaaa;");
+    ///
     if (totalSendedBytes == 0){
         if (req.getErrorCode() != OK)
             res.setErrorCode(req.getErrorCode());

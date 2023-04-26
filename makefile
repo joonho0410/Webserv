@@ -6,7 +6,7 @@
 #    By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/10/27 17:07:45 by junhjeon          #+#    #+#              #
-#    Updated: 2023/04/24 19:00:24 by jaehyuki         ###   ########.fr        #
+#    Updated: 2023/04/26 18:40:13 by jaehyuki         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -18,11 +18,12 @@ SRCS = ./main.cpp \
 	./ServerConfig/ServerConfig.cpp \
 	./ServerEngine/ServerEngine.cpp \
 	./ServerEngine/ServerEngineProcess.cpp\
+	./ServerEngine/Session.cpp\
 	./Request/Request.cpp \
 	./Response/Response.cpp	\
 	./CGI/CgiHandler.cpp	\
 	./KqueueUdata.cpp \
-	./ParsingUtility.cpp 
+	./ParsingUtility.cpp  
 
 
 OBJS = $(SRCS:.cpp=.o)
