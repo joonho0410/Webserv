@@ -620,6 +620,8 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     std::string responseString;
     int &totalSendedBytes = res.getTotalSendedBytes();
     int bytes_written = 0;
+    struct server_config_struct& serverBlock = res.getServer();
+    bool check = false;
     
     if (totalSendedBytes == 0){
         if (req.getErrorCode() != OK)
@@ -627,7 +629,35 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
         res.setRedirectUrl(req.getRedirectUrl());
         if (res.getErrorCode() != OK)
         {
-            res.setResponseByErrorCode();
+            if (res.getErrorPageCode() != 0){
+                //error when get default error_page_code;
+            }  else if (serverBlock.duplicate_key_and_value.find("error_page") != serverBlock.duplicate_key_and_value.end()){
+                std::cout << "========================== find error page ==================== " <<std::endl;
+                std::vector <std::vector <std::string > > temp = serverBlock.duplicate_key_and_value["error_page"];
+                for (size_t i = 0; i < temp.size(); ++i){
+                    std::vector< std::string > temp2 = temp[i];
+                    if (!temp[i].empty())
+                        for (size_t j = 0; j < temp2.size() - 1 ; ++ j){
+                            if (temp[i][j].compare(std::to_string(res.getErrorCode())) == 0){
+                                res.setErrorPageCode(res.getErrorCode());
+                                int fd =_M_openDocs(temp2.back());
+                                if (fd == -1 || fd == -2){
+                                    check = true;
+                                    res.setResponseByErrorCode();
+                                    break ; 
+                                }
+                                res.setErrorPageCode(res.getErrorCode());
+                                fcntl(fd, F_SETFL, O_NONBLOCK);
+                                udata->setState(READ_DOCS);
+                                udata->setRequestedFd(curr_event.ident);
+                                _M_changeEvents(_m_change_list, fd, EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, udata);                
+                                return ;
+                            }
+                        }
+                    if (check)
+                        break;
+                } 
+            }
         }
         else
             res.addBasicHeader();

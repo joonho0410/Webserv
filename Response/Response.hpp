@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include "ParsingUtility.hpp"
+#include "Structure.hpp"
 
 enum Response_erorr{
     RESPONSE_OK
@@ -14,6 +15,7 @@ enum Response_erorr{
 class Response
 {
     private :
+        int _m_errorPageCode;
         int _m_errorCode;
         int _m_totalSendedBytes;
         bool _m_addhead;
@@ -33,6 +35,7 @@ class Response
         Response();
         ~Response();
         /* Setter */
+        void setErrorPageCode(int);
         void setErrorCode(int errorCode);
         void setStatusLine(int errorCode);
         void setHeader(std::map<std::string, std::string> header);
@@ -42,6 +45,8 @@ class Response
         
         
         /* Getter */
+        int getErrorPageCode();
+        struct server_config_struct&    getServer();
         int&    getTotalSendedBytes();
         std::string     getStatusLine();
         std::map<std::string, std::string> getHeader();

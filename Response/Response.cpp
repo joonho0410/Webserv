@@ -2,6 +2,7 @@
 
 /* CONSTRUCTOR */
 Response::Response(){
+    _m_errorPageCode = 0;
     _m_errorCode = RESPONSE_OK;
     _m_addhead = true;
     _m_totalSendedBytes = 0;
@@ -14,6 +15,10 @@ Response::~Response(){
 }
 
 /* Setter */
+
+void  Response::setErrorPageCode(int e){
+    _m_errorPageCode = e;
+}
 
 void Response::setErrorCode(int errorCode){
     _m_errorCode = errorCode;
@@ -46,6 +51,8 @@ void Response::setServer(struct server_config_struct& server)
 
 /* Getter */
 
+struct server_config_struct&     Response::getServer(){ return _m_server; }
+
 int&    Response::getTotalSendedBytes() { return _m_totalSendedBytes; }
 std::string Response::getStatusLine(){ return _m_statusLine;}
 std::map<std::string, std::string> Response::getHeader(){ return _m_header;}
@@ -75,9 +82,14 @@ int         Response::getErrorCode()
     return _m_errorCode;
 }
 
+int  Response::getErrorPageCode(){
+    return _m_errorPageCode;
+}
+
 /*Functions */
 
 void Response::clean(){
+    _m_errorPageCode = 0;
     _m_errorCode = RESPONSE_OK;
     _m_addhead = true;
     _m_totalSendedBytes = 0;

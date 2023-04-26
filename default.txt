@@ -4,7 +4,7 @@
         cgi          .bla /cgi-bin/;
         cgi          .py  /cgi-bin-py/;
         
-        error_page  404 405 303 123 ./default_error_page.html;
+        error_page  404 405 303 123 ./40x.html;
         error_page  501 502 503 504 505 ./default_error_page50x.html;
         
         #charset koi8-r;
