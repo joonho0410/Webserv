@@ -39,6 +39,11 @@ void Response::setRedirectUrl(std::string url){
     _m_redirectUrl = url;
 }
 
+void Response::setServer(struct server_config_struct& server)
+{
+    _m_server = server;
+}
+
 /* Getter */
 
 int&    Response::getTotalSendedBytes() { return _m_totalSendedBytes; }
@@ -214,6 +219,8 @@ void    Response::setResponseByErrorCode() {
         return ;
     }
     if (_m_addhead && _m_response.empty())
+    {
         ErrorCodeBody(_m_errorCode);
+    }
     addBasicHeader();
 }

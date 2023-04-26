@@ -13,6 +13,7 @@ class KqueueUdata
         Response    _m_res;
         FILE*       _m_inFile;
         FILE*       _m_outFile;
+        struct server_config_struct _m_server;
 
     public :
         KqueueUdata();
@@ -35,4 +36,5 @@ class KqueueUdata
         void setResponse(Response res);
         void setinFile(FILE *);
         void setoutFile(FILE *);
+        void setServer(struct server_config_struct&);
 };

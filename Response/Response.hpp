@@ -4,6 +4,7 @@
 #include <map>
 #include <unistd.h>
 #include <vector>
+#include <string>
 #include "ParsingUtility.hpp"
 
 enum Response_erorr{
@@ -22,6 +23,7 @@ class Response
         std::map<std::string, std::string> _m_header;
         std::string _m_response;
         std::string _m_redirectUrl;
+        struct server_config_struct _m_server;
 
         void _M_initStatusCodeMap(void);
         void _M_initStatusCodeBodyMap(void);
@@ -36,6 +38,7 @@ class Response
         void setHeader(std::map<std::string, std::string> header);
         void setAddHead(bool b);
         void setRedirectUrl(std::string);
+        void setServer(struct server_config_struct&);
         
         
         /* Getter */

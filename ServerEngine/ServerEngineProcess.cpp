@@ -154,6 +154,7 @@ void ServerEngine::_M_executeRequest(struct kevent& curr_event, Request &req){
         if (loca.valid == false)
             loca = serv; // location block 을 찾을 수 없기에 serv 블록에 환경대로 실행한다.
     }
+    res.setServer(serv);
     
     /* check is CGI */
     if (serv.duplicate_key_and_value.find("cgi") != serv.duplicate_key_and_value.end()){
