@@ -120,7 +120,7 @@ void ServerEngine::_M_autoIndexing(struct kevent &curr_event, std::string server
 
     closedir(dir);
     res.appendResponse(body);
-    res.addHeader("Content-Security-Policy", "img-src 'none'"); //다른 이미지 소스 요청 블로킹
+    //res.addHeader("Content-Security-Policy", "img-src 'none'"); //다른 이미지 소스 요청 블로킹
     res.addHeader("Content-type", "text/html; charset=UTF-8");
     udata->setState(WRITE_RESPONSE);
     res.setErrorCode(200);
@@ -139,8 +139,8 @@ void ServerEngine::_M_changeEvents(std::vector<struct kevent>& change_list, uint
 void ServerEngine::_M_disconnectClient(struct kevent& curr_event, std::map<int, std::string>& clients)
 {
     std::cout << "client disconnected: " << curr_event.ident << std::endl;
-    shutdown(curr_event.ident, SHUT_WR);
-    // close(curr_event.ident);
+    //shutdown(curr_event.ident, SHUT_WR);
+    close(curr_event.ident);
     std::cout << "erase ident" << std::endl;
     if (clients.find(curr_event.ident) != clients.end())
         clients.erase(curr_event.ident);
@@ -429,6 +429,7 @@ void ServerEngine::make_serversocket()
 
 void ServerEngine::start_kqueue()
 {
+    signal(SIGPIPE, SIG_IGN);
     if ((_m_kq = kqueue()) ==  -1)
          exit_with_perror("kqueue() error\n" + std::string(strerror(errno)));
 
@@ -436,7 +437,6 @@ void ServerEngine::start_kqueue()
     for (size_t i = 0; i != _m_server_socket.size(); i++)
         _M_changeEvents(_m_change_list, _m_server_socket[i], EVFILT_READ, EV_ADD | EV_ENABLE, 0, 0, _M_makeUdata());
     std::cout << "echo server started" << std::endl;
-
     /* main loop */
     int new_events;
     struct kevent* curr_event;

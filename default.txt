@@ -20,9 +20,10 @@
             autoindex on;
         }
 
-        location /put_test/ {
-            allow PUT;
+        location /put_test {
+            allow PUT, GET;
             root .;
+            autoindex on;
         }
 
         location /post_body {
