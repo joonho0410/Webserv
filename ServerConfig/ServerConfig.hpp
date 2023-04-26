@@ -23,7 +23,7 @@ class ServerConfig
     
     /*  default function */
     public:
-        ServerConfig(){ _path = "./default.txt"; }
+        ServerConfig(){ _path = "./default.conf"; }
         ~ServerConfig(){}
     
     /*  private function */

@@ -627,7 +627,7 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
         if (req.getErrorCode() != OK)
             res.setErrorCode(req.getErrorCode());
         res.setRedirectUrl(req.getRedirectUrl());
-        if (res.getErrorCode() != OK)
+        if (res.getErrorCode() != OK && res.getErrorCode() != 301)
         {
             if (res.getErrorPageCode() != 0){
                 //error when get default error_page_code;
@@ -658,9 +658,15 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
                         break;
                 } 
             }
-        }
-        else
+        } else if (res.getErrorCode() == OK && res.getErrorPageCode() != 0 && res.getErrorCode() != 301){
+            res.setErrorCode(res.getErrorPageCode());
             res.addBasicHeader();
+        }
+        else{
+            if (res.getErrorCode() == 301)
+                res.addHeader("Location", res.getRedirectUrl());
+            res.addBasicHeader();
+        }
     }
     responseString = res.getResponse();
 
