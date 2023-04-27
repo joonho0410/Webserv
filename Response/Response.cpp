@@ -66,6 +66,12 @@ std::string Response::getResponse(){
         response.append(str);
         response.append("\r\n");
     }
+    for (std::vector<std::string>::iterator it = _m_cookies.begin(); it != _m_cookies.end(); it++)
+    {
+        response.append("SET-COOKIE: ");
+        response.append(*it);
+        response.append("\r\n");
+    }
     response.append("\r\n");
     if (_m_addhead)
         response.append(_m_response);
@@ -94,6 +100,7 @@ void Response::clean(){
     _m_addhead = true;
     _m_totalSendedBytes = 0;
     _m_response.clear();
+    _m_cookies.clear();
 }
 
 void Response::appendResponse(std::string &str){
@@ -103,6 +110,11 @@ void Response::appendResponse(std::string &str){
 void Response::addHeader(std::string headerName, std::string content) {
     ft_toupper(headerName);
     _m_header[headerName] = content;
+}
+
+void Response::addCookie(std::string cookieStr)
+{
+    _m_cookies.push_back(cookieStr);
 }
 
 void Response::addBasicHeader() {

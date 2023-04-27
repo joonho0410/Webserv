@@ -24,8 +24,9 @@
 #include "../KqueueUdata.hpp"
 #include "../ParsingUtility.hpp"
 #include "../CGI/CgiHandler.hpp"
+#include "Session.hpp"
 
-class ServerEngine
+class ServerEngine : public Session
 {
     private:
         std::vector<int>                          _m_server_socket;
@@ -34,7 +35,7 @@ class ServerEngine
         std::vector<struct kevent>                _m_change_list; // kevent vector for changelist
         struct kevent                             _m_event_list[8]; // kevent array for eventlist
         std::vector<struct server_config_struct>  _m_server_config_set;
-    
+        
     private:
         struct server_config_struct _M_findServerPort(std::string ports, std::string server_name);
         struct server_config_struct _M_findLocationBlock(struct server_config_struct &_server_block, std::string &url);

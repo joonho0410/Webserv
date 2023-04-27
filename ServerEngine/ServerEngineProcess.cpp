@@ -623,6 +623,17 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     struct server_config_struct& serverBlock = res.getServer();
     bool check = false;
     
+    if (!verifySession(req.getSessionId()))
+    {
+        std::string cookieStr;
+        
+        cookieStr += "sessionId";
+        cookieStr += "=";
+        cookieStr += createSession();
+        res.addCookie(cookieStr);
+    }
+    showSessions();
+
     if (totalSendedBytes == 0){
         if (req.getErrorCode() != OK)
             res.setErrorCode(req.getErrorCode());

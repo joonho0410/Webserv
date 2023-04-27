@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: gyim <gyim@student.42seoul.kr>             +#+  +:+       +#+         #
+#    By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2022/10/27 17:07:45 by junhjeon          #+#    #+#              #
-#    Updated: 2023/04/25 19:46:35 by gyim             ###   ########seoul.kr   #
+#    Updated: 2023/04/27 14:14:01 by jaehyuki         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,7 +17,8 @@ NAME = webserv
 SRCS = ./main.cpp \
 	./ServerConfig/ServerConfig.cpp \
 	./ServerEngine/ServerEngine.cpp \
-	./ServerEngine/ServerEngineProcess.cpp \
+	./ServerEngine/ServerEngineProcess.cpp\
+	./ServerEngine/Session.cpp\
 	./Request/Request.cpp \
 	./Response/Response.cpp	\
 	./CGI/CgiHandler.cpp	\

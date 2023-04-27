@@ -26,6 +26,7 @@ class Response
         std::string _m_response;
         std::string _m_redirectUrl;
         struct server_config_struct _m_server;
+        std::vector<std::string> _m_cookies;
 
         void _M_initStatusCodeMap(void);
         void _M_initStatusCodeBodyMap(void);
@@ -58,6 +59,7 @@ class Response
         void clean();
         void appendResponse(std::string &);
         void addHeader(std::string headerName, std::string content);
+        void addCookie(std::string cookieStr);
         void addBasicHeader(); //Server, Date, Content-Length
         void setResponseByCgiResult(std::string cgiResult);
         void setResponseByErrorCode();
