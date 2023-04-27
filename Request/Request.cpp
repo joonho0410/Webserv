@@ -234,6 +234,39 @@ void Request::show_save()
     }
 }
 
+void Request::_M_parseCookies(std::vector<std::string> cookies)
+{
+    std::string token;
+    size_t startPos;
+    size_t endPos;
+    size_t pos;
+
+    for (std::vector<std::string>::iterator it = cookies.begin(); it != cookies.end(); it++)
+    {
+        std::string cookieStr = *it;
+        while (cookieStr.length() != 0)
+        {
+            startPos = cookieStr.find_first_not_of(" \t");
+            if (startPos == std::string::npos)
+                break;
+            endPos = cookieStr.find_first_of(";");
+            if (endPos == std::string::npos)
+            {
+                token = cookieStr.substr(startPos);
+                cookieStr.clear();
+            }
+            else
+            {
+                token = cookieStr.substr(startPos, endPos);
+                cookieStr = cookieStr.substr(endPos + 1);
+            }
+            pos = token.find("=");
+            if (pos != std::string::npos)
+                _m_cookies[token.substr(0, pos)] = token.substr(pos + 1);
+        }
+    }
+}
+
 void Request::_M_parseValueWithComma(std::string const &_line, std::string _key)
 {
     size_t      valueStart = 0;
@@ -428,9 +461,10 @@ void Request::_M_parseRequestheader()
         _M_parseKeyValue(line);
         lineStart = lineEnd + 2;
     }
-    std::vector<std::string> cookies = _m_header.find("COOKIE");
-    if (cookies.)
-
+    std::vector<std::string> cookies = _m_header["COOKIE"];
+    if (cookies.size() != 0)
+        _M_parseCookies(cookies);
+    _m_sessionId = _m_cookies["sessionId"];
     _m_buf = _m_buf.substr(lineStart);
     std::cout << "when REQUEST HEADER IS ENDED ::: " << _m_buf.size() << std::endl;
 }
@@ -455,4 +489,5 @@ std::string Request::getMethod(){ return _m_method;}
 std::string Request::getQueryString(){ return _m_queryString; }
 std::string Request::getServerUrl(){ return _m_serverUrl; }
 std::string Request::getRedirectUrl() { return _m_redirectUrl; }
+std::string Request::getSessionId() { return _m_sessionId; }
 std::map< std::string, std::vector<std::string> > &Request::getHeader(){ return _m_header; }

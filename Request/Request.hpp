@@ -55,6 +55,7 @@ class Request
         std::string getQueryString();
         std::string getServerUrl();
         std::string getRedirectUrl();
+        std::string getSessionId();
         std::map< std::string, std::vector<std::string> >& getHeader();
 
     private:
@@ -90,6 +91,7 @@ class Request
         void _M_parseBodyChunked(size_t n);
         void _M_parseStringQuery(std::string &_line);
         void _M_parseKeyValue(std::string const &_line);
+        void _M_parseCookies(std::vector<std::string> cookies);
         void _M_parseValueWithComma(std::string const &_line, std::string key);
         void _M_parseValueWithSlash(std::string const &_line, std::string key);
 };

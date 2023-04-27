@@ -6,7 +6,7 @@
 /*   By: jaehyuki <jaehyuki@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/25 19:34:16 by jaehyuki          #+#    #+#             */
-/*   Updated: 2023/04/26 18:41:46 by jaehyuki         ###   ########.fr       */
+/*   Updated: 2023/04/27 14:12:22 by jaehyuki         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,8 +16,10 @@
 #include <map>
 
 #define LEN_SESSION_ID 10
-#define MAX_SESSION_NUM 100
-#define SESSION_LIFE_TIME 60 * 5 //5분
+#define MAX_SESSION_NUM 1
+//#define SESSION_LIFE_TIME 60 * 5 //5분
+#define SESSION_LIFE_TIME 10 //10초
+//#define SESSION_LIFE_TIME 0 //0초
 
 class Session {
 	private:
@@ -31,4 +33,5 @@ class Session {
 		
 		std::string createSession();
 		bool verifySession(std::string sessionId);
+		void	showSessions();
 };

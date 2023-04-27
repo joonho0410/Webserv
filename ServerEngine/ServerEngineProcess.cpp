@@ -619,10 +619,16 @@ void ServerEngine::writeResponse(struct kevent& curr_event){
     int &totalSendedBytes = res.getTotalSendedBytes();
     int bytes_written = 0;
 
-    ///
-    res.addCookie("sampleCookie=jajajajaja;");
-    res.addCookie("sampleCookie2=haaaaaaa;");
-    ///
+    if (!verifySession(req.getSessionId()))
+    {
+        std::string cookieStr;
+        
+        cookieStr += "sessionId";
+        cookieStr += "=";
+        cookieStr += createSession();
+        res.addCookie(cookieStr);
+    }
+    showSessions();
     if (totalSendedBytes == 0){
         if (req.getErrorCode() != OK)
             res.setErrorCode(req.getErrorCode());
